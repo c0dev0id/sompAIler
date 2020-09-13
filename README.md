@@ -20,6 +20,9 @@ Pseudo-random melody generator
 * accompanied with a preset *probabilistic fingerprint* – overwritable by the user, to be saved at any rate –
   * that encodes the used tone scale, i.e. the tone names and the possible intervals, and
   * describes very concisely the Markov chains for their interrelations to make up a specific musical style,
+* finally an optional "intuitive spice" number that encodes *tiny* tweaks to the melody, will be 0 by default
+  (does not need to be 0, however, if by a composer who passed you the link of the generator with all
+  the used parameters incorporated, to prove his melody is close to what the algorithm yielded),
 
 the service outputs a melody in the following plain text notation: `C4 1, C4 1, G4 1, G4 1, A4 1, A4 1, G4 2, ...`
 
