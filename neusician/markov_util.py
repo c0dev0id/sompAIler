@@ -4,13 +4,19 @@ def main(model):
     mel_interv, *nets = re.split(r",(?![-\d])", model)
     mel_interv = [ int(i) for i in mel_interv.split(",") ]
     markov_probs_intervals = {}
+    def flat(chain):
+        for i in chain:
+            if isinstance(i, tuple):
+                yield from flat(i)
+            else:
+                yield i
     for net in nets:
         paths, probs = re.split(r":(?=\d)", net, 1)
         probs = [ int(i) for i in probs.split(",") ]
         multipath = parse_model(paths)
         for markov_chain in markov_evolutions_iter_from(multipath):
-            markov_probs_intervals[markov_chain] = probs
-    print(markov_probs_intervals)
+            markov_probs_intervals[tuple(flat(markov_chain))] = probs
+    print("{} => {}".format(model, markov_probs_intervals))
 
 
 def parse_model(paths):
@@ -58,7 +64,6 @@ def parse_model(paths):
     while paths:
         if '[' in paths or ']' in paths:
             phrase_before, sqbr, paths = re.split(r"([\[\]])", paths, 1)
-            print("{} {} {}".format(phrase_before, sqbr, paths))
     
             clause = parse_clause(phrase_before)
     
@@ -110,7 +115,7 @@ def markov_chain(markov_list):
     i = 0
     ret = []
  
-    while not(i < 0):
+    while True:
         try:
             r = next(iterators[i])
             if r is None:
@@ -121,8 +126,12 @@ def markov_chain(markov_list):
                 ret.append(r)
                 i += 1
         except IndexError:
-            yield tuple(ret)
-            i -= 1
+            if ret:
+                yield tuple(ret)
+                ret.pop(-1)
+                i -= 1
+            else:
+                break
 
 
 def markov_evolutions_iter_from(markov_list):
