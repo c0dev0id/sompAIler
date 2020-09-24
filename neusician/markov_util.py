@@ -112,24 +112,20 @@ def markov_chain(markov_list):
         else:
             iterators.append(my_iter([item]))
 
-    i = 0
     ret = []
  
     while True:
         try:
-            r = next(iterators[i])
+            r = next(iterators[ len(ret) ])
             if r is None:
                 ret.pop(-1)
-                i -= 1
                 continue
             else:
                 ret.append(r)
-                i += 1
         except IndexError:
             if ret:
                 yield tuple(ret)
                 ret.pop(-1)
-                i -= 1
             else:
                 break
 
