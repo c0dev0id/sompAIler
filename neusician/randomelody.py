@@ -117,40 +117,6 @@ def get_probability_model(string):
     return Model(singles, multis)
 
 
-def extract_corrections(corr_number):
-    """
-    Possible corrections:
-    - 0 or octave lower(1)/higher(2)
-    - 0 or semi-tone lower(1)/higher(2) (flat/sharp)
-    - 0 or note length 1 tick shorter(1)/longer(2) (zero-length notes get omitted)
-    - 0 or note offset 1 tick shorter(1)/longer(2)
-    So, for every note of a melody, you can encode a number of 4 digits of base 3:
-      3^4 = 81 combinations
-    A melody of eight notes can be tweaked to a composer's intuitive liking with a
-    number between 0 and 81^8 = 1.853.020.188.851.841, a decimal number of 16 digits.
-    It is about a third of earth's mass measured in millions of tons, roughly.
-    Of course, the composer can change the melody in any way, is not limited to this.
-    But then, he would lose the ability to prove its origin of his inputs having been
-    processed in a pseudo-random way with this algorithm.
-    """
-
-    Corr = namedtuple('Corr', "octave semitone length offset")
-
-    def correction(remainder):
-        rems = []
-        while remainder:
-            remainder, rem = divmod(remainder, 3)
-            rems.append(rem)
-        return Corr(**reversed(rems))
-
-    corrs = []
-    while corr_number:
-        corr_number, remainder = divmod(corr_number, 81)
-        corrs.append(correction(remainder))
-
-    return tuple(reversed(corrs))
-
-
 if __name__ == '__main__':
     PROBABILITIES = get_probability_model(input("Probabilistic fingerprint: ").rstrip())
     phrase = re.sub(r"\W+", "_", input("Secret phrase (EN|DE): ").rstrip().lower())
