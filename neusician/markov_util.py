@@ -79,9 +79,9 @@ def parse_model(paths):
     def parse_clause(clause):
         stack = []
         for variant in clause.split(":"):
-            if '/' in variant:
+            if '-' in variant:
                 adjnotes = []
-                for note in variant.split("/"):
+                for note in variant.split("-"):
                     adjnotes.append(note)
                 stack.append(adjnotes)
             else:
@@ -205,7 +205,7 @@ if __name__ == '__main__':
     #     "E:45,16,23,15,29,44,59,76,67,53,49,37,25,56,62,F:13,12,17,15,14,19,30,21,25,15,19,17,16,23,26,"
     #     "G:55,42,33,24,32,39,46,55,51,45,37,31,39,42,36,39,A:83,7,20,12,15,23,19,92,19,12,14,17,23,29,97,"
     #     "H:1,0,0,0,0,0,0,0,15,0,0,0,0,0,1,"
-    #     "C/E:D/F:C[D:E/F:G]A:A/E:[D/A:G]E/F/D:A[G:E[D:C/E]:F]:G/H/D:56,48,36,22,26,29,33,27,21,73,55,42,11,19,33"
+    #     "C-E:D-F:C[D:E-F:G]A:A-E:[D-A:G]E-F-D:A[G:E[D:C-E]:F]:G-H-D:56,48,36,22,26,29,33,27,21,73,55,42,11,19,33"
     # ))
     exit(0)
 

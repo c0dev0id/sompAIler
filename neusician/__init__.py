@@ -1,6 +1,6 @@
 import os
-
-from flask import Flask
+from .arbitextonotes import tones
+from flask import Flask, render_template, request, jsonify
 
 def create_app(test_config=None):
     # create and configure the app
@@ -27,6 +27,30 @@ def create_app(test_config=None):
     @app.route('/hello')
     def hello():
         return 'Hello, World!'
+
+    @app.route('/randomelody', methods=("GET", "POST"))
+    def randomelody_stage1():
+        if request.method == 'POST':
+            return jsonify(tones(
+                request.form["seedphrase"],
+                request.form["markovspec"],
+                (int(request.form["melody-share"]),
+                 int(request.form["pause-share"]))
+                ))
+        else:
+            markov = request.args.get("markov")
+            if not markov:
+                markov = open("neusician/markov_default.txt").read()
+            return render_template("random.tmpl",
+                seed_phrase="test",
+                markov_spec=markov,
+                correction="(Not implemented, yet)",
+                melody_pause_ratio=(
+                    request.args.get("melody-share", 1),
+                    request.args.get("pause-share", 1)
+                )
+            )
+
 
     return app
 

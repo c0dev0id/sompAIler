@@ -1,5 +1,5 @@
 import re
-from markov_util import markov_sensible_tone_getter
+from .markov_util import markov_sensible_tone_getter
 from collections import defaultdict
 
 BASE64URL_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
