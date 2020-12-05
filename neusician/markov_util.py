@@ -1,5 +1,8 @@
 import re
 
+class MarkovSpecError(RuntimeError):
+    pass
+
 def markov_sensible_tone_getter(model):
 
     mel_interv, *nets = re.split(r",(?![-\d])", model)
@@ -18,9 +21,26 @@ def markov_sensible_tone_getter(model):
     for net in nets:
         paths, probs = re.split(r":(?=\d)", net, 1)
         probs = [ int(i) for i in probs.split(",") ]
+        if len(probs) != len(mel_interv):
+            raise MarkovSpecError(
+                    "Length of probabilities does not "
+                    "match melodic intervals for path(s) "
+                       + paths
+                )
         multipath = parse_model(paths)
         for markov_chain in markov_evolutions_iter_from(multipath):
+
             path = tuple(flat(markov_chain))
+
+            if len(path) > 1:
+                for t in path:
+                    if (t,) not in markov_probs_intervals:
+                        raise MarkovSpecError(
+                            "Tone label {} referenced in nets, "
+                            "but does not occur as single item."
+                            .format(t)
+                        )
+
             max_pathlen = max(max_pathlen, len(path))
             markov_probs_intervals[path] = probs
 
@@ -197,15 +217,4 @@ def markov_evolutions_iter_from(markov_list):
         else:
             yield i
 
-
-if __name__ == '__main__':
-    # exit(main(
-    #     "-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,"
-    #     "C:83,23,56,76,92,96,88,76,79,85,86,72,48,33,65,D:100,77,52,30,35,42,95,123,90,82,75,62,78,82,98,"
-    #     "E:45,16,23,15,29,44,59,76,67,53,49,37,25,56,62,F:13,12,17,15,14,19,30,21,25,15,19,17,16,23,26,"
-    #     "G:55,42,33,24,32,39,46,55,51,45,37,31,39,42,36,39,A:83,7,20,12,15,23,19,92,19,12,14,17,23,29,97,"
-    #     "H:1,0,0,0,0,0,0,0,15,0,0,0,0,0,1,"
-    #     "C-E:D-F:C[D:E-F:G]A:A-E:[D-A:G]E-F-D:A[G:E[D:C-E]:F]:G-H-D:56,48,36,22,26,29,33,27,21,73,55,42,11,19,33"
-    # ))
-    exit(0)
 
