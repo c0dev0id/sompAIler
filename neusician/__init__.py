@@ -51,6 +51,12 @@ def create_app(test_config=None):
                 )
             )
 
+    @app.route('/sompyle', methods=('GET',))
+    def yaml_textarea():
+        return render_template("yaml_input.tmpl",
+                yamlcode=request.args.get("yamlcode")
+            )
+
 
     return app
 
