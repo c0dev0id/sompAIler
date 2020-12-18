@@ -6,9 +6,9 @@ BASE64URL_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-
 BASE64URL_CHARS = { k: v for v, k in enumerate(BASE64URL_STR) }
 
 def tones(seed_phrase, model, melody_pause_ratio=(1,1)):
-    """ Tones from a seed phrase (any unicode string) based on a markov net model.
+    """ Tones from a seed phrase (any unicode string) based
+        on a markov net model.
 
-    Example for a model specification:
     """
 
     melody_level, pause_level = melody_pause_ratio
@@ -68,22 +68,25 @@ def creativity_from_b64string(changes):
     #                 ^ offset relative to last harmony hook
     #                   ^ no harmony, step means chromatic step
     #                     ^----- set new harmony here -----^
-    #                     = relative step back- or forward in circle of fifth.
-    #                     - step means step of the diatonic scale, any mode 
-    #                     - i.e. a step is a second, 2 steps is a third.
-    #                     - little or big steps, depends on scale / chosen mode.
+    #                     = relative step back- or forward in the circle
+    #                       of fifth.
+    #                     - |step|>2 means step of the diatonic scale,
+    #                       any mode. step +/-1 is an augmented/diminished
+    #                       prime. 2 steps is a second (hence may yield the
+    #                       same note as 1), 3 steps is a third, and so forth
+    #                     - little or big steps, depends on scale chosen mode.
+
     variance, changes = changes.split("-", 1)
     octaves, steps, length, offset = (2*int(i)+1 for i in variance)
     big_number = 0
-    i = 0
-    for char in reversed(changes):
+    for i, char in enumerate(reversed(changes)):
         big_number += BASE64URL_CHARS[char] * len(BASE64URL_STR) ** i
-        i += 1
     base = 15 * octaves * steps * length * offset
     remainders = []
     while big_number:
         big_number, remainder = divmod(big_number, base)
         remainders.append(remainder)
+
     changes = []
     cum_octave = 0
     for rem in reversed(remainders):
@@ -97,15 +100,16 @@ def creativity_from_b64string(changes):
         else:
             harmony -= 8
         props = { "harmony": harmony }
+        rem, o = divmod(rem, offset)
+        props["offset"] = o - int(variance[3])
+        rem, l = divmod(rem, length)
+        props["length"] = l - int(variance[2])
+        rem, s = divmod(rem, steps)
+        props["steps"] = s - int(variance[1])
         rem, o = divmod(rem, octaves)
+        o -= int(variance[0])
         cum_octave += o
         props["octave"] = cum_octave
-        rem, s = divmod(rem, steps)
-        props["steps"] = s
-        rem, l = divmod(rem, length)
-        props["length"] = l
-        rem, o = divmod(rem, offset)
-        props["offset"] = o
         changes.append(props)
 
     return changes
@@ -113,21 +117,25 @@ def creativity_from_b64string(changes):
 
 def creativity_to_b64string(changes):
 
-    note_change_codes = []
-    PROBS = ("offset", "length", "steps", "octaves")
+    PROPS = ("offset", "length", "steps", "octave")
     # uncalculate accumulation:
+    octaves = [0] * (len(changes)-1)
     for i, change in enumerate(reversed(changes[1:])):
-        change["octaves"] -= changes[-1-i]["octaves"]
+        octaves[-1-i] = change["octave"] - changes[-2-i]["octave"]
+    for i, o in enumerate(octaves):
+        changes[i+1]["octave"] = o
 
     maxabs = {}
-    minima = {}
     for prop in PROPS:
-        maxabs[prop] = max(abs(i[prop]) in changes)
+        maxabs[prop] = max(abs(i[prop]) for i in changes)
 
+    note_change_codes = []
     for change in changes:
         num = 0
-        for i, prop in enumerate(PROPS):
-            num += (change[prop] + maxabs[prop]) * (2*maxabs[prop]+1)**i
+        factor = 1
+        for prop in PROPS:
+            num += (change[prop] + maxabs[prop]) * factor
+            factor *= 2 * maxabs[prop] + 1
         num *= 15
         harmony = change["harmony"]
         if harmony == "f":
@@ -139,12 +147,12 @@ def creativity_to_b64string(changes):
         else:
             harmony += 8
         num += harmony
-        note_change_codes.append(harmony)
+        note_change_codes.append(num)
 
     big_number = 0
     base = 15
     for v in maxabs.values():
-        base *= 2*i + 1
+        base *= 2*v + 1
 
     for i, code in enumerate(reversed(note_change_codes)):
         big_number += code * base ** i
@@ -154,7 +162,7 @@ def creativity_to_b64string(changes):
         big_number, remainder = divmod(big_number, len(BASE64URL_CHARS))
         base64.append(BASE64URL_STR[remainder])
 
-    return ("".join(maxabs[i] for i in reversed(PROPS))
+    return ("".join(str(maxabs[i]) for i in reversed(PROPS))
             + "-" + "".join(reversed(base64))
         )
 
