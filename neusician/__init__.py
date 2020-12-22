@@ -1,5 +1,6 @@
 import os
 from .arbitextonotes import tones
+from .markov_util import MarkovSpecError
 from flask import Flask, render_template, request, jsonify
 
 def create_app(test_config=None):
@@ -31,18 +32,24 @@ def create_app(test_config=None):
     @app.route('/randomelody', methods=("GET", "POST"))
     def randomelody_stage1():
         if request.method == 'POST':
-            return jsonify(tones(
-                request.form["seedphrase"],
-                request.form["markovspec"],
-                (int(request.form["melody-share"]),
-                 int(request.form["pause-share"]))
-                ))
+            seedphrase = request.form["seedphrase"]
+            if len(seedphrase) > 1000:
+                return "Seed phrase is too long", 400
+            try:
+                return jsonify(tones(
+                    request.form["seedphrase"],
+                    request.form["markovspec"],
+                    (int(request.form["melody-share"]),
+                     int(request.form["pause-share"]))
+                    ))
+            except MarkovSpecError as e:
+                return "Markov specification invalid: " + str(e), 400
         else:
             markov = request.args.get("markov")
             if not markov:
                 markov = open("neusician/markov_default.txt").read()
             return render_template("random.tmpl",
-                seed_phrase="test",
+                seed_phrase=request.args.get("seedphrase", "test"),
                 markov_spec=markov,
                 correction="(Not implemented, yet)",
                 melody_pause_ratio=(
@@ -51,9 +58,13 @@ def create_app(test_config=None):
                 )
             )
 
-    @app.route('/sompyle', methods=('GET',))
+    @app.route('/sompyle', methods=('GET','POST'))
     def yaml_textarea():
-        return render_template("yaml_input.tmpl",
+        if request.method == 'POST':
+            if request.form["submit"] == "payload":
+                yamlcode = request.form["yamlcode"]
+                ...
+        else: return render_template("yaml_input.tmpl",
                 yamlcode=request.args.get("yamlcode")
             )
 
