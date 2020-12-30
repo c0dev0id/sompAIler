@@ -5,8 +5,8 @@ class MarkovSpecError(RuntimeError):
 
 def markov_sensible_tone_getter(model):
 
-    mel_interv, *nets = re.split(r",(?![-\d])", model)
-    mel_interv = [ int(i) for i in mel_interv.split(",") ]
+    mel_interv, *nets = re.split(r"(?<=\d)\.(?![-\d])", model)
+    mel_interv = [ int(i) for i in mel_interv.split(".") ]
     markov_probs_intervals = {}
 
     def flat(chain):
@@ -19,8 +19,8 @@ def markov_sensible_tone_getter(model):
     max_pathlen = 0
 
     for net in nets:
-        paths, probs = re.split(r":(?=\d)", net, 1)
-        probs = [ int(i) for i in probs.split(",") ]
+        paths, probs = re.split(r".(?=\d)", net, 1)
+        probs = [ int(i) for i in probs.split(".") ]
         if len(probs) != len(mel_interv):
             raise MarkovSpecError(
                     "Length of probabilities does not "
@@ -98,7 +98,7 @@ def parse_model(paths):
 
     def parse_clause(clause):
         stack = []
-        for variant in clause.split(":"):
+        for variant in re.split(r"(?<!-)\.(?!-)", clause):
             if '-' in variant:
                 adjnotes = []
                 for note in variant.split("-"):
@@ -137,8 +137,9 @@ def parse_model(paths):
         return lstack
     
     while paths:
-        if '[' in paths or ']' in paths:
-            phrase_before, sqbr, paths = re.split(r"([\[\]])", paths, 1)
+        # handle surrounding clause markers
+        if '.-' in paths or '-.' in paths:
+            phrase_before, marker, paths = re.split(r"(\.-|-\.)", paths, 1)
     
             clause = parse_clause(phrase_before)
     
@@ -148,13 +149,17 @@ def parse_model(paths):
     
             lstack.extend(clause)
     
-            if sqbr == '[':
+            if marker.startswith("."):
                 stack.append([])
                 after_close = False
     
-            else:
+            elif marker.endswith("."):
                 lstack = wrap_in_tail(stack.pop(-1), False)
                 after_close = True
+
+            else:
+                raise SyntaxError("Markov net specification processing")
+
         else:
             clause = parse_clause(paths)
             paths = ''
