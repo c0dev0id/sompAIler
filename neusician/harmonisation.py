@@ -1,12 +1,20 @@
-_nono = object()
-def get_scaler(scale=_nono):
+from copy import copy
 
-    if scale is _nono: scale = (
+_diatonic = (
             [ 0,  0,  0,  0,  0,  0,  0],
             ( 2,  2,  1,  2,  2,  2,  1),
             ('C','D','E','F','G','A','B'),
             ( 1,  2,  2,  1,  2,  2,  2)
         )
+
+_chromatic = (
+            (0,) * 12,
+            (1,) * 12,
+            ('C','C#','D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'),
+            (1,) * 12
+        )
+
+def get_scaler(scale):
 
     length = len(scale[0])
     pos = 0
@@ -17,19 +25,22 @@ def get_scaler(scale=_nono):
         pos %= length
         return pos
 
-    return scale, scaler
+    return tuple(copy(s) for s in scale), scaler
 
 
 def closest_harmonic_tone_getter():
 
-    scale, scaler = get_scaler()
+    diatonic_scale, diatonic_scaler = get_scaler(_diatonic)
     adiff = 0
 
     def get_tone(diff, otone, add_steps=0, add_octaves=0):
         nonlocal adiff
-        adiff += diff
+        adiff += diff or 0
         bfr, aftr = (3, 1) if diff == abs(diff) else (-1, -3)
-        if diff:
+        if diff is None:
+            scale, scaler = get_scaler(_chromatic)
+        elif diff:
+            scale, scaler = diatonic_scale, diatonic_scaler
             sdiff = diff//(abs(diff) or 1)
             for _ in range(abs(diff)):
                 n0 = scaler(bfr)
@@ -90,7 +101,7 @@ if __name__ == '__main__':
             break
         elif ',d' in i:
             i, d = i.split(",d")
-            d = int(d)
+            d = None if d == "chr" else int(d)
         else:
             d = 0
         if 's' in i:

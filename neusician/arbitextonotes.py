@@ -1,14 +1,20 @@
 import re
 from .markov_util import markov_sensible_tone_getter
+from .harmonisation import closest_harmonic_tone_getter
 from collections import defaultdict
 
 BASE64URL_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 BASE64URL_CHARS = { k: v for v, k in enumerate(BASE64URL_STR) }
 
-def tones(seed_phrase, model, melody_pause_ratio=(1,1)):
+class CreativeStringError(RuntimeError):
+    pass
+
+def tones(
+        seed_phrase, model, melody_pause_ratio=(1,1),
+        creativity=None, compositionalavi=None
+    ):
     """ Tones from a seed phrase (any unicode string) based
         on a markov net model.
-
     """
 
     melody_level, pause_level = melody_pause_ratio
@@ -35,7 +41,7 @@ def tones(seed_phrase, model, melody_pause_ratio=(1,1)):
     )
 
     tone, melody, pause_offset = (None, 0, 0)
-    def get_tone():
+    def it_and_reset():
         nonlocal tone, melody, pause_offset
         ret = (*tone[0:2], tone[2][0])
         tone, melody, pause_offset = (None, 0, 0)
@@ -48,18 +54,59 @@ def tones(seed_phrase, model, melody_pause_ratio=(1,1)):
             big_number, remainder = divmod(big_number, melody_level + pause_level)
             if remainder < pause_level:
                 pause_offset += 1
-                if tone: yield get_tone()
+                if tone: yield it_and_reset()
             elif melody > remainder:
                 tone[2][0] += 1
             else:
-                if tone: yield get_tone()
+                if tone: yield it_and_reset()
                 melody = remainder
                 big_number, tone = tone_it.send(big_number)
                 tone = (pause_offset, tone, [1])
 
-        yield tone[0], tone[1], tone[2][0]
+        if tone: yield it_and_reset()
 
-    return list(my_iter())
+    tones = list(my_iter())
+
+    if creativity is None:
+        return tones
+    elif isinstance(creativity, str):
+        creativity = creativity_from_b64string(creativity)
+
+    if len(tones) < len(creativity):
+        raise CreativeStringError(
+            "Creativity demands more tones than available"
+        )
+    elif len(tones) > len(creativity):
+        raise CreativeStringError(
+            "There are more tones than changed by creativity"
+        )
+
+    quite_final_tones = []
+    tone_getter = closest_harmonic_tone_getter()
+    harmony_offset = 0
+    next_harmony_offset = 0
+    current_offset = 0
+    for tone, change in zip(tones, creativity):
+        orig_offset = tone[0] + current_offset
+        if change["harmony"] == "f":
+            new_offset = orig_offset
+        elif change["harmony"] == "r":
+            new_offset = tone[0] + harmony_offset
+        else:
+            new_offset = tone[0] + next_harmony_offset
+        current_offset = tone[0] + tone[2] - orig_offset
+        next_harmony_offset = max(next_harmony_offset, current_offset)
+        new_offset += change.get("offset", 0)
+        quite_final_tones.append({ "new": [ new_offset, tone_getter(
+                change["harmony"], tone[1], change["steps"], change["octaves"]
+            ), tone[2] + change.get("length", 0) ], "old": tone, **change
+        })
+
+    if compositionalavi is None:
+        return quite_final_tones
+
+    else:
+        return compositor(quite_final_tones, compositionalavi)
 
 
 def creativity_from_b64string(changes):
