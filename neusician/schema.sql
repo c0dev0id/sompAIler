@@ -54,8 +54,12 @@ CREATE VIEW stake AS
 CREATE VIEW waiting_users AS
     SELECT ROW_NUMBER() OVER(
         ORDER BY MIN(1, tried_times
-        * (strftime('%s', 'now') - strftime('%s', last_password_match))
-        / (strftime('%s', last_password_match) - strftime('%s', needs_worker_since))
+        * (strftime('%s', 'now')
+	  - strftime('%s', last_password_match)
+          )
+        / (strftime('%s', last_password_match)
+	  - strftime('%s', needs_worker_since)
+          )
         ) DESC) AS wait_rank, ROWID AS userid
     FROM "user"
         WHERE tried_times>0
@@ -84,7 +88,11 @@ CREATE TRIGGER update_lpm_request_worker
     WHEN NEW.last_password_match > OLD.last_password_match
 BEGIN
     UPDATE "user"
-      SET tried_times=tried_times+1,
+      SET tried_times=tried_times+((
+		-- Only count one try in a minute
+		strftime('%s', NEW.last_password_match)
+	      - strftime('%s', OLD.last_password_match)
+	    ) > 60)
           needs_worker_since=ifnull(needs_worker_since, datetime('now'))
       WHERE ROWID=OLD.ROWID;
     INSERT OR IGNORE INTO workers_v (userid) VALUES(OLD.ROWID);
