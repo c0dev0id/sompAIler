@@ -45,7 +45,7 @@ stage:
                      # a ...
 
 # ... free-style sound defined:
-instrument p: {} # So simple, it is only a single sine.
+instrument p: {{}} # So simple, it is only a single sine.
 
 # But, alas, this is not on sound, just on inspiration for composition.
 
