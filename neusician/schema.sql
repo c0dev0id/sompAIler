@@ -119,24 +119,30 @@ CREATE VIEW stake AS
       WHERE expires_not_before >= DATETIME('now')
     ;
 
--- Who is next, i.e. who waited the longest time and requested a
--- worker in growing intervals.
+-- Who is next, i.e. who waits and checks for availability 
+-- of a worker in the most regular intervals.
 CREATE VIEW waiting_users AS
     SELECT
-      ROW_NUMBER() OVER(
-        ORDER BY MIN(1,
-          tried_times * (STRFTIME('%s', 'now') - STRFTIME(
-              '%s', last_password_match
-            )
+      ROW_NUMBER() OVER(ORDER BY
+      -- Good old SQLite3 has no square / exp op in the core?!
+        STRFTIME('%s', last_password_match) - STRFTIME(
+                 '%s', needs_worker_since
           )
-          / ((STRFTIME('%s', last_password_match) - STRFTIME(
-                '%s', needs_worker_since
-              )
-            ) OR 1)
-        ) DESC) AS wait_rank,
+      * STRFTIME('%s', last_password_match) - STRFTIME(
+                 '%s', needs_worker_since
+          )
+      / MIN(0.001, ABS(
+          ( STRFTIME('%s', 'now')
+          - STRFTIME('%s', last_password_match)
+          ) 
+	- ( STRFTIME('%s', last_password_match)
+          - STRFTIME('%s', needs_worker_since)
+          ) / tried_times
+        )) 
+      ASC) AS wait_rank,
       ROWID
     FROM "user"
-        WHERE ROWID NOT IN (SELECT IFNULL(ROWID, 0) FROM worker)
+        WHERE ROWID NOT IN (SELECT IFNULL(userid, 0) FROM worker)
     ;
 
 -- Rank-joining brokerage of waiting user and available_worker
@@ -175,9 +181,9 @@ CREATE TRIGGER update_lpm_request_worker
     WHEN NEW.last_password_match > IFNULL(OLD.last_password_match, '')
 BEGIN
     UPDATE "user"
-      SET tried_times=tried_times+((
+      SET tried_times=tried_times+(
         -- Only count one try in a minute
-        STRFTIME('%s', NEW.last_password_match)
+        (STRFTIME('%s', NEW.last_password_match)
           - IFNULL(STRFTIME('%s', OLD.last_password_match), 0)
         ) > 59),
         needs_worker_since=IFNULL(needs_worker_since, DATETIME('now'))
