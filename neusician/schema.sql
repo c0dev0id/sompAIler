@@ -140,9 +140,9 @@ CREATE VIEW waiting_users AS
           ) / tried_times
         )) 
       ASC) AS wait_rank,
-      ROWID
+      ROWID AS userid
     FROM "user"
-        WHERE ROWID NOT IN (SELECT IFNULL(userid, 0) FROM worker)
+        WHERE userid NOT IN (SELECT IFNULL(userid, 0) FROM worker)
     ;
 
 -- Rank-joining brokerage of waiting user and available_worker
@@ -204,10 +204,10 @@ BEGIN
     UPDATE "user"
       SET tried_times=0,
           expires_not_before=DATETIME(
-              'now', '1 HOUR', MAX(7200, IFNULL(
+              'now', '1 HOUR', IFNULL( MIN(7200,
                 STRFTIME('%s', 'now') - STRFTIME(
                  '%s', OLD.needs_worker_since
-                ), 0)) || ' SECONDS'),
+                )), 0) || ' SECONDS'),
           needs_worker_since=NULL
       WHERE ROWID=OLD.ROWID;
 END;
