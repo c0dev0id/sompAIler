@@ -1,12 +1,11 @@
 import os
 from .arbitextonotes import tones
+from .sompyler_procman as procman
 from .sompyler_yaml import make_yaml_code
 from .markov_util import MarkovSpecError
 from flask import Flask, render_template, request, jsonify, make_response
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
-
-users = {} # Just as long as we do not have a database
 
 def create_app(test_config=None):
     # create and configure the app
@@ -99,10 +98,21 @@ def create_app(test_config=None):
     @auth.verify_password
     def verify_password(username, password):
         if username.startswith("+"):
-            users[username[1:]] = generate_password_hash(password)
-        elif username in users and \
-                check_password_hash(users.get(username), password):
+            if not procman.get_hashed_password_of(username[1:]):
+                procman.register_user(
+                    username,
+                    generate_password_hash(password)
+                )
+
+        else:
+            stored_password = procman.get_hashed_password_of(username)
+            stored_password and check_password_hash(
+                    stored_password, password
+                ):
+                    procman.user_is_authenticated(username)
                     return username
+
+        return
 
     @app.route('/sompyle', methods=('GET','POST'))
     @auth.login_required
