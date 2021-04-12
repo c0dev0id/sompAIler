@@ -7,6 +7,7 @@ con = None
 STD_RESOURCES = 10**9
 
 TMPDIR="/var/tmp/sompyler/data"
+SUBDIR="neusician"
 
 class NoWorkersAvailableError(RuntimeError):
     pass
@@ -35,7 +36,7 @@ def init_db(path):
         con = sqlite3.connect(path)
 
     c = con.cursor()
-    c.executescript(open("schema.sql").read())
+    c.executescript(open(os.path.join(SUBDIR, "schema.sql")).read())
 
     wid = 0
     for wdir in glob(os.path.join(TMPDIR, '[0-9][0-9]')):
@@ -106,38 +107,49 @@ def worker_directory_of_user(name, *path):
 
 def initialize_sompyler(user, score):
     c = con.cursor()
-    userid, resources = next(c.execute("""
-        SELECT u.ROWID, given_resources - used_resources
-          FROM user u
-          JOIN worker w ON u.ROWID=w.userid
-         WHERE u.name=?
-        """, (user,)
-    ))
-    os.environ["SOMPYLER_LIMITS"] = os.environ["SOMPYLER_LIMITS"].replace(
-        "::", f":{resources}:"
-    )
-
     with open(worker_directory_of_user(user, "score"), "w") as score_fh:
         c.execute(
-            "UPDATE worker SET taken_times=taken_times+1 WHERE userid=?",
-            (userid,)
+            "UPDATE worker SET taken_times=taken_times+1 "
+            " WHERE userid=(SELECT ROWID FROM user WHERE name=?)",
+            (user,)
         )
         print(score, file=score_fh)
         con.commit()
 
 
 def get_status(user):
-
-    res = subprocess.run(
-      [ "bash", "single-sompyler-procman.sh",
-        worker_directory_of_user(user), user
-      ], capture_output=True, check=True
+    c = con.cursor()
+    resources = next(c.execute("""
+        SELECT given_resources - used_resources
+          FROM user u
+          JOIN worker w ON u.ROWID=w.userid
+         WHERE u.name=?
+        """, (user,)
+    ))[0]
+    sompyler_limits = os.environ["SOMPYLER_LIMITS"].replace(
+        "::", f":{resources}:"
     )
+
+    my_env = os.environ.copy()
+    my_env["SOMPYLER_LIMITS"] = sompyler_limits
+
+    try:
+        res = subprocess.run(
+          [ os.path.join(SUBDIR, "single-sompyler-procman.sh"),
+            worker_directory_of_user(user), user
+          ], env=my_env, capture_output=True, check=True
+        )
+    except subprocess.CalledProcessError as e:
+        log = open("/tmp/shell_out.log", "wb")
+        log.write(e.stderr)
+        log.close()
+        raise
 
     notes, status, errors = res.stdout.decode("utf-8").split("---\n")
 
     progress, *status = status.split("\n")
-    current, total, reused_percent, remtime, res = progress.split()
+    current, total, reused_percent, remtime, new_res = progress.split()
+    new_res = int(new_res)
 
     if status:
         m = re.search(r"\S+\.\w+", status[0])
@@ -146,23 +158,35 @@ def get_status(user):
         else:
             status = { 'remaining_time': status[0] or remtime }
 
-    if 'file_accomplished' in status \
-            or status.get('remaining_time').startswith("FAIL"):
-        c = con.cursor()
+    if new_res: # We ensure externally that res > 0 only once, just
+            # the next call after having the audio file been
+            # generated.
         c.execute("""
             UPDATE worker SET used_resources=used_resources+?
             WHERE userid=(SELECT ROWID FROM user WHERE name=?)
         """,
-            (res, user)
+            (new_res, user)
         )
+        resources -= new_res
         con.commit()
+
+    if errors:
+        errors = re.sub(r'(?:(")?\S+/)\.\.', '\\1...', errors)
+        if '_TOTAL_LIMIT' in errors:
+            errors = (
+                    "You have used up your total samples quota. "
+                    f"Can you restrict yourself to {resources} "
+                    f"of originally {STD_RESOURCES}?"
+                )
 
     return {
         'notes_log': notes,
         'currently_rendered_notes': int(current),
         'total_notes_to_render': int(total),
         'reused_percent': float(reused_percent),
-        'total_samples_calculated': int(res),
+        'total_samples_calculated': '{:.01f}'.format(
+            resources / STD_RESOURCES * 100
+        ),
         **status,
         'errors': errors,
     }

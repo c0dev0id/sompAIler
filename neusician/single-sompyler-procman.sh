@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set -o nounset
 T="${1}"
 U="${2}"
@@ -10,15 +11,21 @@ fi
 if [ ! -d "${T}" ]; then
        >&2 printf "${T} does not exist or is not a directory"
        exit 1
-elif [ ! -f "${T}/running.pid" ]; then
-       touch "${T}/running.pid" "${T}/.use_dir_as_cache" "${T}/score"
+elif [ ! -f "${T}/worker.pid" ]; then
+       touch "${T}/worker.pid" "${T}/.use_dir_as_cache" "${T}/score"
 fi
 
-IND="$(date +%s -r "${T}/score")"
+date_of() {
+    date +%s -r "$1" 2> /dev/null || printf 0;
+}
+
+IND="$(date_of "${T}/score")"
 if [ -f "${T}/OUT.log" ]; then
-       OUTD="$(date +%s -r "${T}/OUT.log")"
+       OUTD="$(date_of "${T}/OUT.log")"
 fi
-read USER PID < "${T}/running.pid"
+read USER PID LASTRUN < "${T}/worker.pid"
+: ${LASTRUN:=1}
+
 
 if [ "${USER}" != "${U}" ]; then
         rm "${T}/*.npy" "${T}/registry" 2> /dev/null
@@ -34,12 +41,15 @@ if [ "${IND-0}" -gt "${OUTD-0}" ]; then
 	done
 	cd $SOMPYLER
         . venv/bin/activate
-        scripts/sompyle -v --workers=0 "${T}/score" "$OUTFILE" > "${T}/OUT.log" 2> "${T}/ERR.log" &
+	LASTRUN=1
+        ./scripts/sompyle -v --workers=0 "${T}/score" "$OUTFILE" > "${T}/OUT.log" 2> "${T}/ERR.log" &
 	PID=$!
-        printf "%s %d" "${U}" "${PID}" > "${T}/running.pid"
+        printf "%s %d" "${U}" "$PID" > "${T}/worker.pid"
         while [ ! -f "$OUTFILE" ] || [ -s "$OUTFILE" ]; do
-		if kill -0 "${PID}"; then
+		if kill -0 "${PID}" 2> /dev/null; then
 			sleep 1;
+		elif [ "$(date_of "$OUTFILE")" -gt "$(date_of "${T}/score")" ]; then
+			break
 		else
 			>&2 printf "Initialization Failure"
 			exit 1
@@ -48,13 +58,15 @@ if [ "${IND-0}" -gt "${OUTD-0}" ]; then
 
 fi
 
+export LASTRUN
 # read and parse progress information from OUT.log
 awk '
 BEGIN { REUSE=0; TOTAL=0; RES=0; CURR=0; ETA="(loading...)" }
-/New note/ {TOTAL+=1; print}
-/Reuse note/ { REUSE+=1; print}
+/New note/ {TOTAL+=1; print }
+/Reuse note/ { REUSE+=1; print }
 /Synthesizing tones/ { CURR=$4; TOTAL=$6; ETA=$7 "~" $8; }
-/Assembling/ {RES=$6; print}
+ENVIRON["LASTRUN"]==1 && /Assembling/ {RES=$6; print }
+/[Mm]easure/ {print}
 END {
            print "---";
            print CURR, TOTAL, REUSE/(TOTAL or 1)*100, ETA, RES;
@@ -66,8 +78,9 @@ if kill -0 $PID 2> /dev/null; then
                        sleep 1;
                done
        fi
-elif [ "$(date +%s -r "$OUTFILE")" -gt "$(date +%s -r "${T}/score")" ];
-   then echo "$OUTFILE ready to deliver."
+elif [ "$(date_of "$OUTFILE")" -gt "$(date_of "${T}/score")" ]; then
+       printf "%s %d %d" "${U}" "$PID" 0 > "${T}/worker.pid"
+       echo "$OUTFILE ready to deliver."
 else
        echo "FAILED. Process ID no longer exists."
 fi        

@@ -1,9 +1,9 @@
 import os
+from . import sompyler_procman as procman
 from .arbitextonotes import tones
-from .sompyler_procman as procman
 from .sompyler_yaml import make_yaml_code
 from .markov_util import MarkovSpecError
-from flask import Flask, render_template, request, jsonify, make_response
+from flask import Flask, render_template, request, jsonify, make_response, redirect, send_file
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -16,6 +16,8 @@ def create_app(test_config=None):
     )
 
     auth = HTTPBasicAuth(realm="Even more private an area")
+
+    procman.init_db(app.config["DATABASE"])
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -98,15 +100,15 @@ def create_app(test_config=None):
     @auth.verify_password
     def verify_password(username, password):
         if username.startswith("+"):
-            if not procman.get_hashed_password_of(username[1:]):
+            if not procman.get_hashed_password_of_user(username[1:]):
                 procman.register_user(
-                    username,
+                    username[1:],
                     generate_password_hash(password)
                 )
 
         else:
-            stored_password = procman.get_hashed_password_of(username)
-            stored_password and check_password_hash(
+            stored_password = procman.get_hashed_password_of_user(username)
+            if stored_password and check_password_hash(
                     stored_password, password
                 ):
                     procman.user_is_authenticated(username)
@@ -117,13 +119,33 @@ def create_app(test_config=None):
     @app.route('/sompyle', methods=('GET','POST'))
     @auth.login_required
     def yaml_textarea():
+        user = auth.current_user()
         if request.method == 'POST':
-            if request.form["submit"] == "payload":
+            if request.form["action"] == "sompyle":
                 yamlcode = request.form["yamlcode"]
-                ...
-        else: return render_template("yaml_input.tmpl",
+                procman.initialize_sompyler(user, yamlcode)
+                return redirect("/sompyle/status")
+        else: return render_template("yaml-input.tmpl",
                 yamlcode=request.args.get("yamlcode")
             )
+
+    @app.route("/sompyle/status")
+    @auth.login_required
+    def sompyler_status_report():
+        user = auth.current_user()
+        return render_template(
+            "sompyler-status-report.tmpl",
+            **procman.get_status(user)
+        )
+
+    @app.route("/sompyle/result.ogg")
+    @auth.login_required
+    def send_audio_generated():
+        return send_file(os.path.join(
+              procman.TMPDIR, "OUT", f"{auth.current_user()}.ogg"
+            ),
+            mimetype="audio/ogg"
+        )
 
     return app
 
