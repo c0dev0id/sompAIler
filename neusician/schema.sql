@@ -232,7 +232,7 @@ BEGIN
            / NEW.used_resources
        ) * 3600 AS INT) || ' SECONDS'
        )
-    );
+    ) WHERE ROWID=OLD.userid;
 
     -- We can probably do some housekeeping here. Drop users having
     -- been expired or whose last password for more than three hours.

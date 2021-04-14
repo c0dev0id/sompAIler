@@ -93,7 +93,7 @@ def worker_directory_of_user(name, *path):
         rank = next(c.execute("""
             SELECT wait_rank
               FROM waiting_users
-              JOIN user u ON w.userid=u.ROWID
+              JOIN user u ON userid=u.ROWID
              WHERE u.name=?
             """,
             (name,)
@@ -190,3 +190,16 @@ def get_status(user):
         **status,
         'errors': errors,
     }
+
+
+def waiting_stats_for_user(user):
+    c = con.cursor()
+    wait_rank = next(c.execute("""
+        SELECT wait_rank
+          FROM waiting_users wu
+          JOIN user u ON u.ROWID=wu.userid
+         WHERE u.name=?
+    """, (user,) ))[0]
+    waiting = next(c.execute("SELECT count(*) FROM waiting_users"))[0]
+    workers = next(c.execute("SELECT count(*) FROM worker"))[0]
+    return { 'wait_rank': wait_rank, 'waiting': waiting, 'workers': workers }

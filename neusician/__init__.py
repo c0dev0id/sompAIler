@@ -147,6 +147,25 @@ def create_app(test_config=None):
             mimetype="audio/ogg"
         )
 
+    @app.errorhandler(procman.NoWorkersAvailableError)
+    def service_unavailable_for_user(user):
+        stats = {
+            'workers': 3,
+            'wait_rank': '?',
+            'waiting': '?',
+            'resources': '?',
+            'tone_length': '?',
+            'total_play_length': '?',
+            'cache_size': '?'
+        }
+
+        stats.update(procman.waiting_stats_for_user(auth.current_user()))
+
+        return render_template(
+            "service-unavailable.tmpl",
+            **stats
+        )
+
     return app
 
 app = create_app()
