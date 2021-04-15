@@ -78,7 +78,7 @@ if kill -0 $PID 2> /dev/null; then
                        sleep 1;
                done
        fi
-elif [ "$(date_of "$OUTFILE")" -gt "$(date_of "${T}/score")" ]; then
+elif [ -s "$OUTFILE" -a "$(date_of "$OUTFILE")" -gt "$(date_of "${T}/score")" ]; then
        printf "%s %d %d" "${U}" "$PID" 0 > "${T}/worker.pid"
        echo "$OUTFILE ready to deliver."
 else
