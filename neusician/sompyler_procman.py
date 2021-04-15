@@ -26,11 +26,13 @@ def register_worker(worker_id):
 
 def init_db(path):
     global con
+
     if os.path.getsize(path):
-        print(f"Just establishing connection with "
-               "initialized database {path}. "
+        print("Just establishing connection with "
+             f"initialized database {path}."
             )
         con = sqlite3.connect(path)
+        con.execute("PRAGMA FOREIGN_KEYS=ON")
         return
     else:
         con = sqlite3.connect(path)

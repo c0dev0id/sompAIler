@@ -195,21 +195,33 @@ END;
 -- If a user had got their worker wrested by some idiot with an
 -- expires_not_before > now + 1 hour (i.e. the provider or a user
 -- privileged by the provider notwithstanding all moral considerations),
--- your patience and forgiveness is be compensated with additional
+-- their patience and forgiveness would be compensated with additional
 -- reservation time up to two hours, depending on how long you have waited.
 CREATE TRIGGER resets_on_successful_worker_assignment
     AFTER UPDATE OF last_password_match ON "user"
     WHEN OLD.ROWID IN (SELECT userid FROM worker)
 BEGIN
     UPDATE "user"
-      SET tried_times=0,
-          expires_not_before=DATETIME(
-              'now', '1 HOUR', IFNULL( MIN(7200,
-                STRFTIME('%s', 'now') - STRFTIME(
-                 '%s', OLD.needs_worker_since
-                )), 0) || ' SECONDS'),
-          needs_worker_since=NULL
-      WHERE ROWID=OLD.ROWID;
+       SET tried_times=0,
+           expires_not_before=IFNULL(
+             DATETIME(
+               'now', '1 HOUR', MIN(7200,
+                 STRFTIME('%s', 'now') - STRFTIME(
+                  '%s', OLD.needs_worker_since
+                 )) || ' SECONDS'),
+             OLD.expires_not_before
+           ),
+           needs_worker_since=NULL
+     WHERE ROWID=OLD.ROWID;
+
+    -- When logging in at least 3 hours later and you have still your
+    -- worker, reset your used resources so you get full quota back.
+    UPDATE worker
+       SET used_resources=0
+     WHERE userid=OLD.ROWID
+       AND DATETIME(OLD.last_password_match, '3 HOURS')
+         < DATETIME('now');
+
 END;
 
 -- When a worker finished, outer system must increase used resources
