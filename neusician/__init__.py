@@ -1,6 +1,7 @@
 import os
 from . import sompyler_procman as procman
 from .arbitextonotes import tones
+from .smart_indent import expand as indenter
 from .sompyler_yaml import make_yaml_code
 from .markov_util import MarkovSpecError
 from flask import Flask, render_template, request, jsonify, make_response, redirect, send_file
@@ -122,11 +123,20 @@ def create_app(test_config=None):
         user = auth.current_user()
         if request.method == 'POST':
             if request.form["action"] == "sompyle":
-                yamlcode = request.form["yamlcode"]
+                yamlcode = indenter(request.form["yamlcode"])
                 procman.initialize_sompyler(user, yamlcode)
                 return redirect("/sompyle/status")
-        else: return render_template("yaml-input.tmpl",
-                yamlcode=request.args.get("yamlcode")
+        else:
+            yamlcode = request.args.get("yamlcode", "")
+            if yamlcode == '' and request.args.get("undo", False):
+                score_file = procman.worker_directory_of_user(user, "score")
+                try:
+                    with open(score_file, "r") as fh:
+                        yamlcode = fh.read()
+                except FileNotFoundError:
+                    pass
+            return render_template("yaml-input.tmpl",
+                yamlcode=yamlcode
             )
 
     @app.route("/sompyle/status")
@@ -144,7 +154,8 @@ def create_app(test_config=None):
         return send_file(os.path.join(
               procman.TMPDIR, "OUT", f"{auth.current_user()}.ogg"
             ),
-            mimetype="audio/ogg"
+            mimetype="audio/ogg",
+            cache_timeout=0
         )
 
     @app.errorhandler(procman.NoWorkersAvailableError)
