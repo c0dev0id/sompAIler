@@ -1,6 +1,7 @@
 import re
 from .markov_util import markov_sensible_tone_getter
 from .harmonisation import closest_harmonic_tone_getter
+from .restricted_88keys import boundguard
 from collections import defaultdict
 
 BASE64URL_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
@@ -11,7 +12,8 @@ class CreativeStringError(RuntimeError):
 
 def tones(
         seed_phrase, model, melody_pause_ratio=(1,1),
-        creativity=None, compositionalavi=None
+        creativity=None, compositionalavi=None,
+        restrict_88keys=False
     ):
     """ Tones from a seed phrase (any unicode string) based
         on a markov net model.
@@ -40,10 +42,12 @@ def tones(
         re.sub(r"\s", "", model)
     )
 
+    bg = boundguard() if restrict_88keys else lambda x: x
+
     tone, melody, pause_offset = (None, 0, 0)
     def it_and_reset():
         nonlocal tone, melody, pause_offset
-        ret = (*tone[0:2], tone[2][0])
+        ret = (tone[0], bg(tone[1]), tone[2][0])
         tone, melody, pause_offset = (None, 0, 0)
         return ret
 

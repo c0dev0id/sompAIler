@@ -49,8 +49,9 @@ def create_app(test_config=None):
                     request.form["seedphrase"],
                     request.form["markovspec"],
                     (int(request.form["melody-share"]),
-                     int(request.form["pause-share"]))
-                    )
+                     int(request.form["pause-share"])),
+                    restrict_88keys=bool(request.form.get("wrap-keys"))
+                )
                 if "sompyler_init" in request.form:
                     sompyler_init = request.form["sompyler_init"].split("~")
                     subdivisions = sompyler_init[1]
@@ -63,7 +64,10 @@ def create_app(test_config=None):
                         make_yaml_code(
                             plaintones,
                             beats=[
-                                int(x) for x in sompyler_init[0].split(".")
+                                int(x) for x in sompyler_init[0].split(
+                                    "." if "." in sompyler_init[0]
+                                        else ""
+                                )
                             ],
                             subdivisions=subdivisions,
                             cut=int(sompyler_init[2]),
