@@ -69,7 +69,7 @@ ENVIRON["LASTRUN"]==1 && /Assembling/ {RES=$6; print }
 /[Mm]easure/ {print}
 END {
            print "---";
-           print CURR, TOTAL, REUSE/(TOTAL or 1)*100, ETA, RES;
+           print CURR, REUSE, REUSE+TOTAL, ETA, RES;
 }' "${T}/OUT.log"
 
 if kill -0 $PID 2> /dev/null; then

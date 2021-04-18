@@ -1,4 +1,5 @@
 import os, subprocess, re
+from io import StringIO
 from glob import glob
 import sqlite3
 
@@ -115,7 +116,8 @@ def initialize_sompyler(user, score):
             " WHERE userid=(SELECT ROWID FROM user WHERE name=?)",
             (user,)
         )
-        print(score, file=score_fh)
+        for line in score:
+            print(line, file=score_fh)
         con.commit()
 
 
@@ -150,7 +152,7 @@ def get_status(user):
     notes, status, errors = res.stdout.decode("utf-8").split("---\n")
 
     progress, *status = status.split("\n")
-    current, total, reused_percent, remtime, new_res = progress.split()
+    current, reused, total, remtime, new_res = progress.split()
     new_res = int(new_res)
 
     if status:
@@ -182,10 +184,10 @@ def get_status(user):
                 )
 
     return {
-        'notes_log': notes,
+        'notes_log': StringIO(notes),
         'currently_rendered_notes': int(current),
-        'total_notes_to_render': int(total),
-        'reused_percent': float(reused_percent),
+        'notes_in_total': int(total),
+        'reused': int(reused),
         'total_samples_calculated': '{:.01f}'.format(
             resources / STD_RESOURCES * 100
         ),
