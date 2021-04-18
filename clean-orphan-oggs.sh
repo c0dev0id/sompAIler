@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Cron this script for every half an hour or so, to get rid of
 # generated ogg files by users who wouldn't be able to log in anyway.
@@ -14,16 +14,15 @@ QUERY="SELECT CASE WHEN '%s' IN (SELECT name FROM user) THEN NULL ELSE '%s' END;
 MYDIR="$(cd $(dirname $(readlink -f "$0")); pwd)"
 
 
-{ ls *.ogg | while read file
-  do
+ls *.ogg | while read file
+do
     if [ -s "$file" ]; then
         user="${file%.*}"
         printf "$QUERY" "$user" "$user"
     else
         rm -- "$file"
-        fi
-  done
-} | sqlite3 "$MYDIR/instance/neusician.db" | while read user
+    fi
+done | sqlite3 "$MYDIR/instance/neusician.db" | while read user
 do
     if [ -n "$user" ]; then
         rm -- "$user.ogg"
