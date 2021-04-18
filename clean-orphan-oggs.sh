@@ -8,26 +8,23 @@
 
 set -eu
 
-cd $1
-
-FIFO=/tmp/clean-orphan-oggs.fifo
-if [ ! -p $FIFO ]; then mkfifo $FIFO; fi
-trap "rm $FIFO" EXIT
+cd "$1"
 
 QUERY="SELECT CASE WHEN '%s' IN (SELECT name FROM user) THEN NULL ELSE '%s' END;\n"
-MYDIR="$(cd $(dirname $(readlink -f $BASH_SOURCE)); pwd)"
+MYDIR="$(cd $(dirname $(readlink -f "$0")); pwd)"
 
 
-{ ls *.ogg | while read file; do
-    if [ -s $file ]; then
+{ ls *.ogg | while read file
+  do
+    if [ -s "$file" ]; then
         user="${file%.*}"
         printf "$QUERY" "$user" "$user"
     else
-        rm "$file"
+        rm -- "$file"
         fi
-done; } > $FIFO &
-
-sqlite3 "$MYDIR/instance/neusician.db" < $FIFO | while read user; do
+  done
+} | sqlite3 "$MYDIR/instance/neusician.db" | while read user
+do
     if [ -n "$user" ]; then
         rm -- "$user.ogg"
     fi
