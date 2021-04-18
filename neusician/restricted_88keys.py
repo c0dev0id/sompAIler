@@ -10,13 +10,14 @@ def boundguard():
 
     def _inner(key):
         nonlocal shift
-        pitch, octave = re.sub(r"(?=\d)", "|", key).split("|")
+        pitch, octave = re.sub(r"(?<![-\d])(?=[-\d])", "|", key).split("|")
         pitchnum = pitches[pitch[0]]
         if pitch[-1] == "#":
             pitchnum += 1
         elif pitch[-1] == "b":
             pitchnum -= 1
         
+        # breakpoint()
         pitchnum += 12 * (int(octave) + shift) - 9
 
         while pitchnum < 0:
@@ -27,6 +28,6 @@ def boundguard():
             shift -= 1
             pitchnum -= 12
 
-        return re.sub(r"\d+$", lambda m: str(int(m.group(0)) + shift), key)
+        return re.sub(r"-?\d+$", lambda m: str(int(m.group(0)) + shift), key)
 
     return _inner
