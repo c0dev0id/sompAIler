@@ -2,7 +2,7 @@ import os
 from . import sompyler_procman as procman
 from .arbitextonotes import tones
 from .smart_indent import expand as indenter
-from .sompyler_yaml import make_yaml_code
+from .sompyler_yaml import make_yaml_code, code_analyzer
 from .markov_util import MarkovSpecError
 from flask import Flask, render_template, request, jsonify, make_response, redirect, send_file
 from flask_httpauth import HTTPBasicAuth
@@ -52,23 +52,26 @@ def create_app(test_config=None):
                      int(request.form["pause-share"])),
                     restrict_88keys=bool(request.form.get("wrap-keys"))
                 )
-                if "sompyler_init" in request.form:
+                if request.form.get("sompyler_init", "") != "":
                     sompyler_init = request.form["sompyler_init"].split("~")
                     subdivisions = sompyler_init[1]
-                    if subdivisions.isdecimal():
+                    if len(subdivisions) == 1 and subdivisions.isdecimal():
                         subdivisions = [0] * int(subdivisions)
                         subdivisions[0] += 1
                     elif "." in subdivisions:
-                        subdivisions = [ int(x) for x in subdivisions.split(".") ]
+                        subdivisions = [
+                                int(x) for x in subdivisions.split(".")
+                            ]
+                    elif "0" in subdivisions:
+                        subdivisions = list(subdivisions)
                     response = make_response(
                         make_yaml_code(
                             plaintones,
                             beats=[
-                                int(x) for x in sompyler_init[0].split(
-                                    "." if "." in sompyler_init[0]
-                                        else ""
-                                )
-                            ],
+                                int(x) for x in sompyler_init[0].split(".")
+                            ] if "." in sompyler_init[0] else list(
+                                sompyler_init[0]
+                            ),
                             subdivisions=subdivisions,
                             cut=int(sompyler_init[2]),
                             beats_per_minute=int(sompyler_init[3]),
@@ -126,10 +129,12 @@ def create_app(test_config=None):
     def yaml_textarea():
         user = auth.current_user()
         if request.method == 'POST':
+            yamlcode = indenter(request.form["yamlcode"])
+            procman.initialize_sompyler(user, yamlcode)
             if request.form["action"] == "sompyle":
-                yamlcode = indenter(request.form["yamlcode"])
-                procman.initialize_sompyler(user, yamlcode)
                 return redirect("/sompyle/status")
+            elif request.form["action"] == "rawanalysis":
+                return redirect("/sompyle/analyze")
         else:
             yamlcode = request.args.get("yamlcode", "")
             if yamlcode == '' and request.args.get("undo", False):
@@ -150,6 +155,15 @@ def create_app(test_config=None):
         return render_template(
             "sompyler-status-report.tmpl",
             **procman.get_status(user)
+        )
+
+    @app.route("/sompyle/analyze")
+    @auth.login_required
+    def sompyler_static_code_analyzer():
+        score_file = procman.worker_directory_of_user(auth.current_user(), "score")
+        return render_template(
+            "sompyler-code-analyzer.tmpl",
+            json=code_analyzer(score_file)
         )
 
     @app.route("/sompyle/result.ogg")

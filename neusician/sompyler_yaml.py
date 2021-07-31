@@ -1,5 +1,6 @@
 from io import StringIO
 from .restricted_88keys import parse_pitch
+from yaml import safe_load_all as load_all
 
 def make_yaml_code(
         tones, beats, subdivisions, cut, beats_per_minute,
@@ -70,15 +71,14 @@ _meta:
         collected_tones = {}
 
         if measure_tones:
-            # print("p: {", ", ".join(
-            #    ": ".join(str(x) for x in i) for i in measure_tones.items()
-            # ), "}\n", file=yaml)
-            print("p:", file=yaml)
+            print("p: # {", ", ".join(
+               ": ".join(str(x) for x in i) for i in measure_tones.items()
+            ), "}", file=yaml)
             for offset, note in measure_tones.items():
                 pitch, length = note.split(" ", 1)
                 keynum = parse_pitch(pitch)
                 collected_tones.setdefault(keynum, [pitch])
-                collected_tones[keynum].append([offset, length])
+                collected_tones[keynum].append([offset, int(length)])
             for keynum in reversed(sorted(collected_tones)):
                 pitch, *tones = collected_tones[keynum]
                 notes = []
@@ -97,9 +97,11 @@ _meta:
                         if not tones[current][1]:
                             current += 1
                             isbegun = False
-                    if current == len(tones):
-                        notes.extend(["_"] * tones[current-1][1])
-                        break
+                        if current == len(tones):
+                            break
+                if current < len(tones):
+                    notes.extend(["_"] * tones[current][1])
+                notes.extend(["."] * (ticks_per_measure-i-1))
                 print(f"  - {pitch} {''.join(notes)}", file=yaml)
 
         skipped_measures -= 1
@@ -121,3 +123,12 @@ _meta:
     skipper(int(cut % ticks_per_measure > 0) + cut // ticks_per_measure)
 
     return yaml
+
+
+def code_analyzer(fh):
+
+    yamliter = load_all(open(fh))
+    main_yaml = next(yamliter)
+    main_yaml['measures'] = [ x for x in yamliter ]
+
+    return main_yaml
