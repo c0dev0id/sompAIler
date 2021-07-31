@@ -1,4 +1,5 @@
 from io import StringIO
+from .restricted_88keys import parse_pitch
 
 def make_yaml_code(
         tones, beats, subdivisions, cut, beats_per_minute,
@@ -30,10 +31,6 @@ f"""
 # Or, even better, make a sheet of it to play on your own instrument.
 #
 
-# Every measure contains all voices with notes in that measure. Notes
-# are indicated by following scheme:
-#     N: P L (N = offset from last bar, in ticks; P pitch; length, in ticks)
-#
 # A "tick" is the subdivision of the number of beats indicated in the
 # stress pattern. "cut" adds to the offset of the first note. There will not
 # be more pause before the note, only the stress of the note is adjusted
@@ -70,9 +67,40 @@ _meta:
         else:
             following_measure = True
 
-        if measure_tones: print("p: {", ", ".join(
-            ": ".join(str(x) for x in i) for i in measure_tones.items()
-        ), "}\n", file=yaml)
+        collected_tones = {}
+
+        if measure_tones:
+            # print("p: {", ", ".join(
+            #    ": ".join(str(x) for x in i) for i in measure_tones.items()
+            # ), "}\n", file=yaml)
+            print("p:", file=yaml)
+            for offset, note in measure_tones.items():
+                pitch, length = note.split(" ", 1)
+                keynum = parse_pitch(pitch)
+                collected_tones.setdefault(keynum, [pitch])
+                collected_tones[keynum].append([offset, length])
+            for keynum in reversed(sorted(collected_tones)):
+                pitch, *tones = collected_tones[keynum]
+                notes = []
+                isbegun = False
+                current = 0
+                for i in range(0, ticks_per_measure):
+                    if i < tones[current][0]:
+                        notes.append(".")
+                    elif isbegun:
+                        notes.append("_")
+                    else:
+                        notes.append("o")
+                        isbegun = True
+                    if isbegun:
+                        tones[current][1] -= 1
+                        if not tones[current][1]:
+                            current += 1
+                            isbegun = False
+                    if current == len(tones):
+                        notes.extend(["_"] * tones[current-1][1])
+                        break
+                print(f"  - {pitch} {''.join(notes)}", file=yaml)
 
         skipped_measures -= 1
         measure_tones.clear()
