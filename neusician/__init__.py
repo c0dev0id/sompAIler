@@ -4,7 +4,10 @@ from .arbitextonotes import tones
 from .smart_indent import expand as indenter
 from .sompyler_yaml import make_yaml_code, code_analyzer
 from .markov_util import MarkovSpecError
-from flask import Flask, render_template, request, jsonify, make_response, redirect, send_file
+from flask import (
+        Flask, render_template, request, jsonify, make_response, redirect,
+        send_file, url_for
+    )
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -14,6 +17,8 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'neusician.db'),
+        SERVER_NAME="demo.neusik.de",
+        PREFERRED_URL_SCHEME="https",
     )
 
     auth = HTTPBasicAuth(realm="Even more private an area")
@@ -77,7 +82,20 @@ def create_app(test_config=None):
                             beats_per_minute=int(sompyler_init[3]),
                             upper_stress_bound=int(sompyler_init[4]),
                             lower_stress_bound=int(sompyler_init[5])
-                       ).getvalue(), 200)
+                        ).getvalue()
+                        + "\n# -------"
+                        + "\n# You can reproduce above output simply by URL:"
+                        + "\n# " + url_for('randomelody_stage1',
+                            _external=True,
+                            **{
+                              'seedphrase': request.form["seedphrase"],
+                              'markov': request.form["markovspec"],
+                              'melody-share': request.form["melody-share"],
+                              'pause-share': request.form["pause-share"],
+                              'sompyler_init': request.form["sompyler_init"],
+                              'wrap_keys': request.form.get("wrap-keys")
+                            }
+                          ), 200)
                     response.mimetype="text/plain"
                     return response
                 else:
@@ -97,7 +115,8 @@ def create_app(test_config=None):
                     request.args.get("melody-share", 1),
                     request.args.get("pause-share", 1)
                 ),
-                sompyler_init=request.args.get("sompyler_init")
+                sompyler_init=request.args.get("sompyler_init"),
+                wrap_keys=request.args.get("wrap_keys", "no")
             )
 
     @auth.error_handler
