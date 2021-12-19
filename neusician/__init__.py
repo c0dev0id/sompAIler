@@ -11,6 +11,8 @@ from flask import (
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
+PASSWORD_PREFIX = os.environ.get("NEUSICIAN_PASSWORD_PREFIX", "+")
+
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
@@ -126,11 +128,11 @@ def create_app(test_config=None):
 
     @auth.verify_password
     def verify_password(username, password):
-        if username.startswith("+"):
-            if not procman.get_hashed_password_of_user(username[1:]):
+        if username.startswith(PASSWORD_PREFIX):
+            username = username[ len(PASSWORD_PREFIX) : ]
+            if not procman.get_hashed_password_of_user(username):
                 procman.register_user(
-                    username[1:],
-                    generate_password_hash(password)
+                    username, generate_password_hash(password)
                 )
 
         else:
