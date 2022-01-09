@@ -4,7 +4,7 @@ def expand(string):
 
     basic_indent = ''
 
-    numindent_rx = r"^(\d+)?(\s*)(.+)"
+    numindent_rx = r"^(\d+)?([ \t]*)(.+)"
     def line(added_indents, space, content):
         nonlocal basic_indent
         if added_indents:
@@ -20,6 +20,7 @@ def expand(string):
                 yield line(*re.match(numindent_rx, part).groups())
         else:
                 yield line(*m.groups())
+
 
 
 if __name__ == '__main__':

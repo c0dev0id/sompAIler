@@ -1,4 +1,4 @@
-import os
+import os, sys
 from . import sompyler_procman as procman
 from .arbitextonotes import tones
 from .smart_indent import expand as indenter
@@ -11,7 +11,7 @@ from flask import (
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
-PASSWORD_PREFIX = os.environ.get("NEUSICIAN_PASSWORD_PREFIX", "+")
+NEW_USER_REG_PREFIX = os.environ.get("NEUSICIAN_NEW_USER_REG_PREFIX", "+")
 
 def create_app(test_config=None):
     # create and configure the app
@@ -24,6 +24,9 @@ def create_app(test_config=None):
     )
 
     auth = HTTPBasicAuth(realm="Even more private an area")
+
+    print(f"NEUSICIAN_NEW_USER_REG_PREFIX={NEW_USER_REG_PREFIX}",
+        file=sys.stderr)
 
     procman.init_db(app.config["DATABASE"])
 
@@ -128,9 +131,10 @@ def create_app(test_config=None):
 
     @auth.verify_password
     def verify_password(username, password):
-        if username.startswith(PASSWORD_PREFIX):
-            username = username[ len(PASSWORD_PREFIX) : ]
+        if username.startswith(NEW_USER_REG_PREFIX):
+            username = username[ len(NEW_USER_REG_PREFIX) : ]
             if not procman.get_hashed_password_of_user(username):
+                print(f"Registering new user {username}", file=sys.stderr)
                 procman.register_user(
                     username, generate_password_hash(password)
                 )
@@ -142,6 +146,8 @@ def create_app(test_config=None):
                 ):
                     procman.user_is_authenticated(username)
                     return username
+            else:
+                print(f"Failed password attempt from user {username}", file=sys.stderr)
 
         return
 
@@ -151,9 +157,13 @@ def create_app(test_config=None):
         user = auth.current_user()
         if request.method == 'POST':
             yamlcode = indenter(request.form["yamlcode"])
+            checkonly_flag = (
+                    '?check-only=1' if 'check-only' in request.form
+                                    else ''
+                )
             procman.initialize_sompyler(user, yamlcode)
             if request.form["action"] == "sompyle":
-                return redirect("/sompyle/status")
+                return redirect("/sompyle/status" + checkonly_flag)
             elif request.form["action"] == "rawanalysis":
                 return redirect("/sompyle/analyze")
         else:
@@ -173,9 +183,10 @@ def create_app(test_config=None):
     @auth.login_required
     def sompyler_status_report():
         user = auth.current_user()
+        check_only = request.args.get('check-only', False)
         return render_template(
             "sompyler-status-report.tmpl",
-            **procman.get_status(user)
+            **procman.get_status(user, check_only)
         )
 
     @app.route("/sompyle/analyze")

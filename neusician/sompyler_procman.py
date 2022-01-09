@@ -121,7 +121,7 @@ def initialize_sompyler(user, score):
         con.commit()
 
 
-def get_status(user):
+def get_status(user, check_only=False):
     c = con.cursor()
     resources = next(c.execute("""
         SELECT given_resources - used_resources
@@ -136,6 +136,8 @@ def get_status(user):
 
     my_env = os.environ.copy()
     my_env["SOMPYLER_LIMITS"] = sompyler_limits
+    if check_only:
+        my_env["WORKERS_COUNT"] = '0'
 
     try:
         res = subprocess.run(
