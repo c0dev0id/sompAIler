@@ -62,9 +62,12 @@ def create_app(test_config=None):
                      int(request.form["pause-share"])),
                     restrict_88keys=bool(request.form.get("wrap-keys"))
                 )
-                if request.form.get("sompyler_init", "") != "":
+                if request.form.get("sompyler_init") not in ('', '0', None, 'None'):
                     sompyler_init = request.form["sompyler_init"].split("~")
-                    subdivisions = sompyler_init[1]
+                    try:
+                        subdivisions = sompyler_init[1]
+                    except:
+                        raise RuntimeError("sompyler_init = " + repr(request.form["sompyler_init"]))
                     if len(subdivisions) == 1 and subdivisions.isdecimal():
                         subdivisions = [0] * int(subdivisions)
                         subdivisions[0] += 1
