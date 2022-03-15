@@ -28,7 +28,7 @@ read USER PID LASTRUN < "${T}/worker.pid"
 
 
 if [ "${USER}" != "${U}" ]; then
-        rm "${T}/*.npy" "${T}/registry" 2> /dev/null
+        rm "${T}"/*.{npy,instr} "${T}/registry" 2> /dev/null
 fi
 
 OUTFILE="${T}/../OUT/$U.ogg"
