@@ -19,7 +19,10 @@ def expand(string):
         for m in re.finditer(numindent_rx, string, re.MULTILINE):
 
             parts = []
-            if ' | ' in m.group(0):
+            partial_string = m.group(0)
+            if ' # ' in partial_string:
+                partial_string = partial_string[:partial_string.index(' # ')]
+            if ' | ' in partial_string:
                 for part in m.group(0).split(' | '):
                     parts.append(part)
             elif not m.group(1):

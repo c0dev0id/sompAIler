@@ -211,9 +211,10 @@ def create_app(test_config=None):
     def sompyler_status_json():
         user = auth.current_user()
         check_only = request.args.get('check-only', False)
-        return jsonify(
-            procman.get_status(user, check_only, tail_log=True)
-        )
+        status = procman.get_status(user, check_only, tail_log=True)
+        if 'notes_log' in status:
+            status['notes_log'] = [ line for line in status['notes_log'] ]
+        return jsonify(status)
 
     @app.route("/sompyle/analyze")
     @auth.login_required

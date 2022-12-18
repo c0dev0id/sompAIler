@@ -184,13 +184,12 @@ def get_status(user, check_only=False, tail_log=False):
     if status:
         m = re.search(r"\S+\.\w+", status[0])
         if m:
-            status = { 'file_accomplished': m.group(0) }
+            status = { 'file_accomplished': True }
+            status['frozen'] = True
         else:
             status = { 'remaining_time': status[0] or remtime }
+            status['frozen'] = not status['remaining_time'].endswith('s)')
 
-    status['frozen'] = bool(
-            re.search(r'(~0s\)|[^)])$', status['remaining_time'])
-        )
 
     if new_res: # We ensure externally that res > 0 only once, just
             # the next call after having the audio file been

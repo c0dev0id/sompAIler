@@ -66,7 +66,7 @@ if [ -f "${T}/status" ]; then
     read skip reuse total curr eta < "${T}/status"
 fi
 
-awk -v skip=${skip:-0} -v REUSE=${reuse:-0} -v TOTAL=${total:-0} -v CURR=${curr:-0} -v ETA=${eta:-(loading...)} '
+awk -v skip=${skip:-0} -v REUSE=${reuse:-0} -v TOTAL=${total:-0} -v CURR=${curr:-0} -v ETA=${eta:-(loading...)} -v RES=0 '
 NR<=skip { next }
 /New note/ {TOTAL+=1; print }
 /Reuse note/ { REUSE+=1; print }
