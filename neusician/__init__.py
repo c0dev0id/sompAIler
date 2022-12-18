@@ -154,7 +154,7 @@ def create_app(test_config=None):
 
     @app.route('/sompyle/reserved-a-worker-for-tests', methods=('GET', 'POST'))
     @auth.login_required
-    @app.route('/sompyle', methods=('GET','POST'))
+    @app.route('/sompyle', methods=('GET','POST'), endpoint='public-yaml-acceptor')
     def yaml_textarea():
         if request.method == 'POST':
             user = auth.current_user()
