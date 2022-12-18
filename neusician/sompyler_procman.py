@@ -82,8 +82,6 @@ def user_is_authenticated(name):
 
 def worker_directory_of_user(name, *path):
 
-    fname = path.pop(-1)
-
     c = con.cursor()
     try:
         worker_id = next(c.execute("""
@@ -107,21 +105,21 @@ def worker_directory_of_user(name, *path):
                 f"{rank-1} users preceed in queue".format(rank)
             ) from e
 
-    def path(fname):
-        return os.path.join(TMPDIR, '{:02d}'.format(worker_id), *path, fname)
+    def opath(fname):
+        return os.path.join(
+                TMPDIR, '{:02d}'.format(worker_id), *path[:-1], fname
+            )
 
-    fullpath = path(fname)
-
-    if fname == 'score':
+    if path[-1] == 'score':
         # If score has not been created by requesting user, delete the score
         # unrevokably, otherwise it would be a breach of privacy.
         try:
-            was_user = next(open(path("worker.pid"), "r")).split()[0]
-            if was_user != name: os.remove(fullpath)
+            was_user = next(open(opath("worker.pid"), "r")).split()[0]
+            if was_user != name: os.remove(opath(path[-1]))
         except (FileNotFoundError, StopIteration):
             pass
 
-    return fullpath
+    return opath(path[-1])
 
 
 def initialize_sompyler(user, score):
