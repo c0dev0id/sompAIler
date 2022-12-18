@@ -212,7 +212,7 @@ def create_app(test_config=None):
         user = auth.current_user()
         check_only = request.args.get('check-only', False)
         return jsonify(
-            procman.get_status(user, check_only)
+            procman.get_status(user, check_only, tail_log=True)
         )
 
     @app.route("/sompyle/analyze")
