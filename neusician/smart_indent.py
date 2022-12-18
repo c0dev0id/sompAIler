@@ -4,7 +4,8 @@ def expand(string):
 
     basic_indent = ''
 
-    numindent_rx = r"^(\d+)?([ \t]*)(.+)"
+    numindent_rx = r"^(\d+(?!:))?([ \t]*)(.+)"
+
     def line(added_indents, space, content):
         nonlocal basic_indent
         if added_indents:
@@ -13,13 +14,43 @@ def expand(string):
             indent = basic_indent = space
         return indent + content
 
-    for m in re.finditer(numindent_rx, string, re.MULTILINE):
+    def multiline(string):
+        last_line_is_voice = False
+        for m in re.finditer(numindent_rx, string, re.MULTILINE):
 
-        if re.search(r' ;\d', m.group(0)):
-            for part in re.split(r"(?<!(?<!\\)\\) ;(?=\d)", m.group(0)):
-                yield line(*re.match(numindent_rx, part).groups())
-        else:
-                yield line(*m.groups())
+            parts = []
+            if ' | ' in m.group(0):
+                for part in m.group(0).split(' | '):
+                    parts.append(part)
+            elif not m.group(1):
+                string = m.group(3)
+                if string[0] in "|[" and not last_line_is_voice:
+                    yield "\n---"
+                else:
+                    last_line_is_voice = bool(re.match(r"[a-zA-Z]\w+:\s*\#?", string))
+                yield line(*re.match(numindent_rx, m.group(0)).groups())
+                continue
+            else:
+                parts = [m.group(0)]
+            
+            sep = ''
+            for part1 in parts:
+                if sep: yield sep
+                if re.search(r' ;\d', part1):
+                    for part in re.split(r"(?<!(?<!\\)\\) ;(?=\d)", part1):
+                        yield line(*re.match(numindent_rx, part).groups())
+                else:
+                    yield line(*re.match(numindent_rx, part1).groups())
+                sep = "\n---"
+
+    while len(string):
+        try:
+            current = string
+            current, string = re.split(r'\s\|\s?(?=[\|\[])', current, 1)
+        except ValueError:
+            string = ''
+        finally:
+            yield from multiline(current)
 
 
 
