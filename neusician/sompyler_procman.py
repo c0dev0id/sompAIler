@@ -110,7 +110,7 @@ def worker_directory_of_user(name, *path):
                 TMPDIR, '{:02d}'.format(worker_id), *path[:-1], fname
             )
 
-    if path[-1] == 'score':
+    if path and path[-1] == 'score':
         # If score has not been created by requesting user, delete the score
         # unrevokably, otherwise it would be a breach of privacy.
         try:
