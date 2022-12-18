@@ -208,7 +208,7 @@ def create_app(test_config=None):
 
     @app.route("/sompyle/status.json")
     @auth.login_required
-    def sompyler_status_report():
+    def sompyler_status_json():
         user = auth.current_user()
         check_only = request.args.get('check-only', False)
         return jsonify(
