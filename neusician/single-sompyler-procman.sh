@@ -60,17 +60,25 @@ fi
 
 export LASTRUN
 # read and parse progress information from OUT.log
-awk '
-BEGIN { REUSE=0; TOTAL=0; RES=0; CURR=0; ETA="(loading...)" }
+# BEGIN { REUSE=0; TOTAL=0; RES=0; CURR=0; ETA="(loading...)" }
+
+if [ -f "${T}/status" ]; then
+    read skip reuse total curr eta < "${T}/status"
+fi
+
+awk -v skip=${skip:-0} -v REUSE=${reuse:-0} -v TOTAL=${total:-0} -v CURR=${curr:-0} -v ETA=${eta:-(loading...)} '
+NR<=skip { next }
 /New note/ {TOTAL+=1; print }
 /Reuse note/ { REUSE+=1; print }
 /Synthesizing tones/ { CURR=$4; TOTAL=$6; ETA=$7 "~" $8; }
 ENVIRON["LASTRUN"]==1 && /Assembling/ {RES=$6; print }
 /[Mm]easure/ {print}
+/unused notes/ && $1>0 {print}
 END {
-           print "---";
-           print CURR, REUSE, REUSE+TOTAL, ETA, RES;
-}' "${T}/OUT.log"
+    print "---";
+    print CURR, REUSE, REUSE+TOTAL, ETA, RES;
+    print NR, REUSE, TOTAL, CURR, ETA > "/dev/fd/3"
+}' "${T}/OUT.log" 3> "${T}/status"
 
 if kill -0 $PID 2> /dev/null; then
        if [ -s "$OUTFILE" ]; then

@@ -82,6 +82,8 @@ def user_is_authenticated(name):
 
 def worker_directory_of_user(name, *path):
 
+    fname = path.pop(-1)
+
     c = con.cursor()
     try:
         worker_id = next(c.execute("""
@@ -105,7 +107,21 @@ def worker_directory_of_user(name, *path):
                 f"{rank-1} users preceed in queue".format(rank)
             ) from e
 
-    return os.path.join(TMPDIR, '{:02d}'.format(worker_id), *path)
+    def path(fname):
+        return os.path.join(TMPDIR, '{:02d}'.format(worker_id), *path, fname)
+
+    fullpath = path(fname)
+
+    if fname == 'score':
+        # If score has not been created by requesting user, delete the score
+        # unrevokably, otherwise it would be a breach of privacy.
+        try:
+            was_user = next(open(path("worker.pid"), "r")).split()[0]
+            if was_user != name: os.remove(fullpath)
+        except (FileNotFoundError, StopIteration):
+            pass
+
+    return fullpath
 
 
 def initialize_sompyler(user, score):
@@ -121,7 +137,7 @@ def initialize_sompyler(user, score):
         con.commit()
 
 
-def get_status(user, check_only=False):
+def get_status(user, check_only=False, tail_log=False):
     c = con.cursor()
     resources = next(c.execute("""
         SELECT given_resources - used_resources
@@ -139,10 +155,17 @@ def get_status(user, check_only=False):
     if check_only:
         my_env["WORKERS_COUNT"] = '0'
 
+    wdir = worker_directory_of_user(user)
+
+    if not tail_log:
+        try:
+            os.remove(os.path.join(wdir, "status"))
+        except FileNotFoundError:
+            pass
     try:
         res = subprocess.run(
           [ os.path.join(SUBDIR, "single-sompyler-procman.sh"),
-            worker_directory_of_user(user), user
+            wdir, user
           ], env=my_env, capture_output=True, check=True
         )
     except subprocess.CalledProcessError as e:
@@ -164,6 +187,10 @@ def get_status(user, check_only=False):
         else:
             status = { 'remaining_time': status[0] or remtime }
 
+    status['frozen'] = bool(
+            re.search(r'(~0s\)|[^)])$', status['remaining_time'])
+        )
+
     if new_res: # We ensure externally that res > 0 only once, just
             # the next call after having the audio file been
             # generated.
@@ -181,8 +208,8 @@ def get_status(user, check_only=False):
         if '_TOTAL_LIMIT' in errors:
             errors = (
                     "You have used up your total samples quota. "
-                    f"Can you restrict yourself to {resources} "
-                    f"of originally {STD_RESOURCES}?"
+                    f"Can you restrict yourself to {resources:,} "
+                    f"of originally {STD_RESOURCES:,}?"
                 )
 
     return {

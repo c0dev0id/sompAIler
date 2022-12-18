@@ -1,15 +1,9 @@
-import os, sys
+import os, sys, stat
 from . import sompyler_procman as procman
 from .arbitextonotes import tones
 from .smart_indent import expand as indenter
-from .sompyler_yaml import make_yaml_code, code_analyzer
-from .markov_util import MarkovSpecError
-from flask import (
-        Flask, render_template, request, jsonify, make_response, redirect,
-        send_file, url_for
-    )
-from flask_httpauth import HTTPBasicAuth
-from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+from random import Random
 
 NEW_USER_REG_PREFIX = os.environ.get("NEUSICIAN_NEW_USER_REG_PREFIX", "+")
 
@@ -77,8 +71,7 @@ def create_app(test_config=None):
                             ]
                     elif "0" in subdivisions:
                         subdivisions = list(subdivisions)
-                    response = make_response(
-                        make_yaml_code(
+                        yamlcode = make_yaml_code(
                             plaintones,
                             beats=[
                                 int(x) for x in sompyler_init[0].split(".")
@@ -91,10 +84,13 @@ def create_app(test_config=None):
                             upper_stress_bound=int(sompyler_init[4]),
                             lower_stress_bound=int(sompyler_init[5])
                         ).getvalue()
-                        + "\n# -------"
-                        + "\n# You can reproduce above output simply by URL:"
-                        + "\n# " + url_for('randomelody_stage1',
-                            _external=True,
+                        random_id = Random().randrange(1,10000)
+                        scorefile = open(f"/tmp/sompyled-{random_id}.yaml", "w")
+                        print(yamlcode
+                          + "\n# -------"
+                          + "\n# You can reproduce above output simply by URL:"
+                          + "\n# " + url_for('randomelody_stage1',
+                              _external=True,
                             **{
                               'seedphrase': request.form["seedphrase"],
                               'markov': request.form["markovspec"],
@@ -102,10 +98,12 @@ def create_app(test_config=None):
                               'pause-share': request.form["pause-share"],
                               'sompyler_init': request.form["sompyler_init"],
                               'wrap_keys': request.form.get("wrap-keys")
-                            }
-                          ), 200)
-                    response.mimetype="text/plain"
-                    return response
+                            }),
+                          file=scorefile)
+                        os.chmod(scorefile.name, stat.S_IREAD)
+                        return redirect(
+                             f"/sompyle?yamlcode-id={random_id}", code=303
+                        )
                 else:
                     return jsonify(plaintones)
 
@@ -154,11 +152,12 @@ def create_app(test_config=None):
 
         return
 
-    @app.route('/sompyle', methods=('GET','POST'))
+    @app.route('/sompyle/reserved-a-worker-for-tests', methods=('GET', 'POST'))
     @auth.login_required
+    @app.route('/sompyle', methods=('GET','POST'))
     def yaml_textarea():
-        user = auth.current_user()
         if request.method == 'POST':
+            user = auth.current_user()
             yamlcode = indenter(request.form["yamlcode"])
             checkonly_flag = (
                     '?check-only=1' if 'check-only' in request.form
@@ -170,8 +169,18 @@ def create_app(test_config=None):
             elif request.form["action"] == "rawanalysis":
                 return redirect("/sompyle/analyze")
         else:
-            yamlcode = request.args.get("yamlcode", "")
-            if yamlcode == '' and request.args.get("undo", False):
+            user = False
+            yamlcode = request.args.get("yamlcode", "")[:1000]
+            if not yamlcode and "yamlcode-id" in request.args:
+                try:
+                    with open(f'/tmp/sompyled-{request.args["yamlcode-id"]}.yaml') as f:
+                        yamlcode = f.read()
+                        os.remove(f.name)
+                except FileNotFoundError:
+                    pass
+            elif (user := auth.current_user()) and (
+                    yamlcode == '' and request.args.get("undo", False)
+                ):
                 score_file = procman.worker_directory_of_user(user, "score")
                 try:
                     with open(score_file, "r") as fh:
@@ -179,7 +188,8 @@ def create_app(test_config=None):
                 except FileNotFoundError:
                     pass
             return render_template("yaml-input.tmpl",
-                yamlcode=yamlcode
+                yamlcode=yamlcode,
+                user=user
             )
 
     @app.route("/sompyle/status")
@@ -187,9 +197,22 @@ def create_app(test_config=None):
     def sompyler_status_report():
         user = auth.current_user()
         check_only = request.args.get('check-only', False)
+        status = procman.get_status(user, check_only)
+        status['timestamp'] = int(datetime.now().timestamp())
+        score_file = procman.worker_directory_of_user(user, "score")
         return render_template(
             "sompyler-status-report.tmpl",
-            **procman.get_status(user, check_only)
+            yamlcode=open(score_file).read(),
+            **status
+        )
+
+    @app.route("/sompyle/status.json")
+    @auth.login_required
+    def sompyler_status_report():
+        user = auth.current_user()
+        check_only = request.args.get('check-only', False)
+        return jsonify(
+            procman.get_status(user, check_only)
         )
 
     @app.route("/sompyle/analyze")
@@ -232,4 +255,13 @@ def create_app(test_config=None):
 
     return app
 
-app = create_app()
+if 'uwsgi' in sys.modules:
+    from .sompyler_yaml import make_yaml_code, code_analyzer
+    from .markov_util import MarkovSpecError
+    from flask import (
+            Flask, render_template, request, jsonify, make_response, redirect,
+            send_file, url_for
+        )
+    from flask_httpauth import HTTPBasicAuth
+    from werkzeug.security import generate_password_hash, check_password_hash
+    app = create_app()
