@@ -5,8 +5,6 @@ from .smart_indent import expand as indenter
 from datetime import datetime
 from random import Random
 
-NEW_USER_REG_PREFIX = os.environ.get("NEUSICIAN_NEW_USER_REG_PREFIX", "+")
-
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
@@ -19,9 +17,18 @@ def create_app(test_config=None):
 
     auth = HTTPBasicAuth(realm="Even more private an area")
 
-    print(f"NEUSICIAN_NEW_USER_REG_PREFIX={NEW_USER_REG_PREFIX}",
+    print("NEUSICIAN_NEW_USER_REG_PREFIX="
+        + os.environ['NEUSICIAN_NEW_USER_REG_PREFIX']
         file=sys.stderr)
 
+    procman.TMPDIR = app.config["TMPDIR"]
+    limits = app.config.get("SOMPYLER_LIMITS")
+    if limits:
+        limits = limits.split(":")
+        procman.STD_RESOURCES = int_wo_unit(limits[2])
+        limits[2] = ''
+        procman.SOMPYLER_LIMITS = ":".join(limits)
+        del limits
     procman.init_db(app.config["DATABASE"])
 
     if test_config is None:
@@ -36,11 +43,6 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-
-    # a simple page that says hello
-    @app.route('/hello')
-    def hello():
-        return 'Hello, World!'
 
     @app.route('/randomelody', methods=("GET", "POST"))
     def randomelody_stage1():
@@ -130,27 +132,29 @@ def create_app(test_config=None):
         if status == 401:
             return render_template("401.tmpl")
 
-    @auth.verify_password
-    def verify_password(username, password):
-        if username.startswith(NEW_USER_REG_PREFIX):
-            username = username[ len(NEW_USER_REG_PREFIX) : ]
-            if not procman.get_hashed_password_of_user(username):
-                print(f"Registering new user {username}", file=sys.stderr)
-                procman.register_user(
-                    username, generate_password_hash(password)
-                )
+    def get_password_verifier():
+        NEW_USER_REG_PREFIX = os.environ.pop("NEUSICIAN_NEW_USER_REG_PREFIX", "+")
+        def _v(username, password):
+            if password.startswith(NEW_USER_REG_PREFIX):
+                password = password[ len(NEW_USER_REG_PREFIX) : ]
+                if not procman.get_hashed_password_of_user(username):
+                    print(f"Registering new user {username}", file=sys.stderr)
+                    procman.register_user(
+                        username, generate_password_hash(password)
+                    )
 
-        else:
-            stored_password = procman.get_hashed_password_of_user(username)
-            if stored_password and check_password_hash(
-                    stored_password, password
-                ):
-                    procman.user_is_authenticated(username)
-                    return username
             else:
-                print(f"Failed password attempt from user {username}", file=sys.stderr)
+                stored_password = procman.get_hashed_password_of_user(username)
+                if stored_password and check_password_hash(
+                        stored_password, password
+                    ):
+                        procman.user_is_authenticated(username)
+                        return username
+                else:
+                    print(f"Failed password attempt from user {username}", file=sys.stderr)
 
-        return
+        return _v
+    auth.verify_password(get_password_verifier())
 
     @app.route('/sompyle/reserved-a-worker-for-tests', methods=('GET', 'POST'))
     @auth.login_required
@@ -159,10 +163,7 @@ def create_app(test_config=None):
         if request.method == 'POST':
             user = auth.current_user()
             yamlcode = indenter(request.form["yamlcode"])
-            checkonly_flag = (
-                    '?check-only=1' if 'check-only' in request.form
-                                    else ''
-                )
+            w0mode = '?w0mode={}'.format(request.form.get('w0mode', ''))
             procman.initialize_sompyler(user, yamlcode)
             if request.form["action"] == "sompyle":
                 return redirect("/sompyle/status" + checkonly_flag)
@@ -196,8 +197,8 @@ def create_app(test_config=None):
     @auth.login_required
     def sompyler_status_report():
         user = auth.current_user()
-        check_only = request.args.get('check-only', False)
-        status = procman.get_status(user, check_only)
+        w0mode = request.args.get('w0mode', False)
+        status = procman.get_status(user, w0mode)
         status['timestamp'] = int(datetime.now().timestamp())
         score_file = procman.worker_directory_of_user(user, "score")
         return render_template(
@@ -210,8 +211,8 @@ def create_app(test_config=None):
     @auth.login_required
     def sompyler_status_json():
         user = auth.current_user()
-        check_only = request.args.get('check-only', False)
-        status = procman.get_status(user, check_only, tail_log=True)
+        w0mode = request.args.get('w0mode', False)
+        status = procman.get_status(user, w0mode, tail_log=True)
         if 'notes_log' in status:
             status['notes_log'] = [ line for line in status['notes_log'] ]
         return jsonify(status)
@@ -237,14 +238,17 @@ def create_app(test_config=None):
 
     @app.errorhandler(procman.NoWorkersAvailableError)
     def service_unavailable_for_user(user):
+        from Sompyler import limits
+
         stats = {
             'workers': 3,
             'wait_rank': '?',
             'waiting': '?',
-            'resources': '?',
-            'tone_length': '?',
-            'total_play_length': '?',
-            'cache_size': '?'
+            'max_shape_coords_per_sound': limits._UNIT_SHAPE_COORDS_MAX,
+            'resources': limits._TOTAL_LIMIT,
+            'tone_length': limits._UNIT_LIMIT,
+            'total_play_length': limits._TOTAL_PLAYING_SECONDS_MAX,
+            'cache_size': limits._CACHE_QUOTA,
         }
 
         stats.update(procman.waiting_stats_for_user(auth.current_user()))
@@ -257,6 +261,7 @@ def create_app(test_config=None):
     return app
 
 if 'uwsgi' in sys.modules:
+    sys.path.insert(0, os.path.join(os.environ["SOMPYLER"]))
     from .sompyler_yaml import make_yaml_code, code_analyzer
     from .markov_util import MarkovSpecError
     from flask import (
@@ -265,4 +270,5 @@ if 'uwsgi' in sys.modules:
         )
     from flask_httpauth import HTTPBasicAuth
     from werkzeug.security import generate_password_hash, check_password_hash
+    from Sompyler.limits import int_wo_unit
     app = create_app()

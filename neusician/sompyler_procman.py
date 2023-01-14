@@ -6,9 +6,9 @@ import sqlite3
 con = None
 
 STD_RESOURCES = 10**9
-
-TMPDIR="/var/tmp/sompyler/data"
+SOMPYLER_LIMITS = None
 SUBDIR="neusician"
+TMPDIR=os.environ.get("TMPDIR", "/tmp")
 
 class NoWorkersAvailableError(RuntimeError):
     pass
@@ -138,7 +138,7 @@ def initialize_sompyler(user, score):
         con.commit()
 
 
-def get_status(user, check_only=False, tail_log=False):
+def get_status(user, w0mode=False, tail_log=False):
     c = con.cursor()
     resources = next(c.execute("""
         SELECT given_resources - used_resources
@@ -147,22 +147,17 @@ def get_status(user, check_only=False, tail_log=False):
          WHERE u.name=?
         """, (user,)
     ))[0]
-    sompyler_limits = os.environ["SOMPYLER_LIMITS"].replace(
-        "::", f":{resources}:"
-    )
+    sompyler_limits = SOMPYLER_LIMITS.replace("::", f":{resources}:")
 
     my_env = os.environ.copy()
     my_env["SOMPYLER_LIMITS"] = sompyler_limits
-    if check_only:
-        my_env["WORKERS_COUNT"] = '0'
+    if w0mode:
+        my_env["W0MODE"] = w0mode
 
     wdir = worker_directory_of_user(user)
 
-    if not tail_log:
-        try:
-            os.remove(os.path.join(wdir, "status"))
-        except FileNotFoundError:
-            pass
+    if tail_log: my_env["SKIP_KNOWN_LINES"] = 1
+
     try:
         res = subprocess.run(
           [ os.path.join(SUBDIR, "single-sompyler-procman.sh"),
@@ -187,7 +182,17 @@ def get_status(user, check_only=False, tail_log=False):
             status = { 'file_accomplished': True }
             status['frozen'] = True
         else:
-            status = { 'remaining_time': status[0] or remtime }
+            text_progress = status[0] or remtime
+            if text_progress == '(loading...)':
+                text_progress = 'Reading YAML score source ...'
+            if '(ETA4RS' text_progress.startswith('(ETA4RS'):
+                text_progress = text_progress.replace(
+                        '(ETA4RS', 'Reverb and Assembling ... (')
+            elif text_progress.startswith('(ETA'):
+                text_progress = text_progress.replace(
+                        '(ETA', 'Synthesizing tones ... ('
+                    )
+            status['remaining_time'] = text_progress
             status['frozen'] = not status['remaining_time'].endswith('s)')
 
 
