@@ -163,6 +163,12 @@ def create_app(test_config=None):
         if request.method == 'POST':
             user = auth.current_user()
             yamlcode = indenter(request.form["yamlcode"])
+            if request.form["action"] == 'delete':
+                if next(yamlcode, None) is None:
+                    procman.delete_user_and_files(user)
+                    return "Your session, authentication credentials and all files have been deleted.", 410
+                else:
+                    return "Bad request", 400
             w0mode = '?w0mode={}'.format(request.form.get('w0mode', ''))
             procman.initialize_sompyler(user, yamlcode)
             if request.form["action"] == "sompyle":
@@ -207,7 +213,7 @@ def create_app(test_config=None):
             **status
         )
 
-    @app.route("/sompyle/status.json")
+    @app.route("/sompyle/status.json", endpoint='statusjson')
     @auth.login_required
     def sompyler_status_json():
         user = auth.current_user()
@@ -225,6 +231,34 @@ def create_app(test_config=None):
             "sompyler-code-analyzer.tmpl",
             json=code_analyzer(score_file)
         )
+
+    @app.route("/sompyle/score.spls", methods=('GET', 'PUT'))
+    @auth.login_required
+    def plain_text_score():
+        if request.method == 'PUT':
+            if request.headers['Content-Type'].endswith('yaml'):
+                from io import StringIO
+                procman.initialize_sompyler(
+                    auth.current_user(),
+                    StringIO(request.get_data(as_text=True))
+                )
+                response = make_response()
+                response.code = 202
+                response.headers['Location'] = url_for('statusjson', _external=True)
+                response.headers['Content-Type'] = 'text/plain'
+                response.data = ("The document will be processed when the Location URL "
+                                "(status monitoring) is called")
+                return response
+            else:
+                return ("Expecting a proper YAML payload with "
+                       "Content-Type header ending with 'yaml'",
+                       400
+                    )
+        else:
+            score_file = procman.worker_directory_of_user(
+                    auth.current_user(), "score"
+                )
+            return send_file(score_file, mimetype="text/plain")
 
     @app.route("/sompyle/result.ogg")
     @auth.login_required
@@ -256,7 +290,11 @@ def create_app(test_config=None):
         return render_template(
             "service-unavailable.tmpl",
             **stats
-        )
+        ), 503
+
+    @app.teardown_appcontext
+    def close_connection(exception):
+        procman.close_connection()
 
     return app
 

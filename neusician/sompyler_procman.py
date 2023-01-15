@@ -4,6 +4,7 @@ from glob import glob
 import sqlite3
 
 con = None
+con_path = None
 
 STD_RESOURCES = 10**9
 SOMPYLER_LIMITS = None
@@ -24,9 +25,30 @@ def register_worker(worker_id):
     c = con.cursor()
     c.execute("INSERT OR IGNORE INTO worker(id) VALUES (?)", (worker_id,))
 
+def _get_cursor():
+    global con
+    first_time = True
+    while first_time:
+        try:
+            c = con.cursor()
+            first_time = False
+        except AttributeError as e:
+            if first_time is True:
+                con = sqlite3.connect(con_path)
+                first_time = -1
+            else:
+                raise
+    return c
+
+def close_connection():
+    global con
+    if con is not None: con.close()
+    con = None
+
 
 def init_db(path):
-    global con
+    global con, con_path
+    con_path = path
 
     if os.path.getsize(path):
         print("Just establishing connection with "
@@ -50,11 +72,12 @@ def init_db(path):
             print(e)
 
     con.commit()
+    close_connection()
 
 
 def register_user(name, password):
 
-    c = con.cursor()
+    c = _get_cursor()
     c.execute("INSERT INTO user(name, password, given_resources)"
               "VALUES (?, ?, ?);", (name, password, STD_RESOURCES)
         )
@@ -63,7 +86,7 @@ def register_user(name, password):
 
 def get_hashed_password_of_user(name):
 
-    c = con.cursor()
+    c = _get_cursor()
     try: return next(c.execute(
             "SELECT password FROM user WHERE name = ?", (name,)
         ))[0]
@@ -73,7 +96,7 @@ def get_hashed_password_of_user(name):
 
 def user_is_authenticated(name):
 
-    c = con.cursor()
+    c = _get_cursor()
     c.execute("UPDATE user SET last_password_match=DATETIME('now')"
               " WHERE name=?", (name,)
         )
@@ -82,7 +105,7 @@ def user_is_authenticated(name):
 
 def worker_directory_of_user(name, *path):
 
-    c = con.cursor()
+    c = _get_cursor()
     try:
         worker_id = next(c.execute("""
             SELECT id
@@ -118,15 +141,28 @@ def worker_directory_of_user(name, *path):
         # unrevokably, otherwise it would be a breach of privacy.
         try:
             was_user = next(open(opath("worker.pid"), "r")).split()[0]
-            if was_user != name: os.remove(opath(path[-1]))
+            if was_user != name: open(opath(path[-1]), 'w').close()
         except (FileNotFoundError, StopIteration):
             pass
 
     return opath(path[-1])
 
 
-def initialize_sompyler(user, score):
+def delete_user_and_files(name):
     c = con.cursor()
+    wdir = worker_directory_of_user(name)
+    c.execute("DELETE FROM user WHERE name=?", (name,))
+    for filename in os.listdir(wdir):
+        os.unlink(os.path.join(wdir, filename))
+    try:
+        os.unlink(os.path.join(wdir, "..", "OUT", f"{name}.ogg"))
+    except FileNotFoundError:
+        pass
+
+    con.commit()
+
+def initialize_sompyler(user, score):
+    c = _get_cursor()
     with open(worker_directory_of_user(user, "score"), "w") as score_fh:
         c.execute(
             "UPDATE worker SET taken_times=taken_times+1 "
@@ -139,7 +175,7 @@ def initialize_sompyler(user, score):
 
 
 def get_status(user, w0mode=False, tail_log=False):
-    c = con.cursor()
+    c = _get_cursor()
     resources = next(c.execute("""
         SELECT given_resources - used_resources
           FROM user u
@@ -209,12 +245,17 @@ def get_status(user, w0mode=False, tail_log=False):
         con.commit()
 
     if errors:
-        errors = re.sub(r'(?:(")?\S+/)\.\.', '\\1...', errors)
-        if '_TOTAL_LIMIT' in errors:
+        errors = re.sub(r'(")?\S+/[Ss]ompyler[/.]*', '\\1.../', errors)
+        if 'QuotaUsedUpError' in errors:
             errors = (
-                    "You have used up your total samples quota. "
-                    f"Can you restrict yourself to {resources:,} "
-                    f"of originally {STD_RESOURCES:,}?"
+                    "Sorry, you have used up your total samples quota. "
+                    "\nNow, at the latest, better save the score locally. "
+                    "In 3h from now, without you accessing this service, "
+                    "your account and all associate data is either removed "
+                    "or your quota is restored to 100% upon log-in."
+                    "\nYou can also purge the session and signup again. "
+                    "This would erase the score and all data immediately. "
+                    "You are welcome to sign-up anew using the told method."
                 )
 
     return {
@@ -231,7 +272,7 @@ def get_status(user, w0mode=False, tail_log=False):
 
 
 def waiting_stats_for_user(user):
-    c = con.cursor()
+    c = _get_cursor()
     wait_rank = next(c.execute("""
         SELECT wait_rank
           FROM waiting_users wu
