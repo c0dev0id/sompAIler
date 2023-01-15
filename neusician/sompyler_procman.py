@@ -221,7 +221,7 @@ def get_status(user, w0mode=False, tail_log=False):
             text_progress = status[0] or remtime
             if text_progress == '(loading...)':
                 text_progress = 'Reading YAML score source ...'
-            if '(ETA4RS' text_progress.startswith('(ETA4RS'):
+            if text_progress.startswith('(ETA4RS'):
                 text_progress = text_progress.replace(
                         '(ETA4RS', 'Reverb and Assembling ... (')
             elif text_progress.startswith('(ETA'):
