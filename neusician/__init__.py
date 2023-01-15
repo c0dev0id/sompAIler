@@ -18,7 +18,7 @@ def create_app(test_config=None):
     auth = HTTPBasicAuth(realm="Even more private an area")
 
     print("NEUSICIAN_NEW_USER_REG_PREFIX="
-        + os.environ['NEUSICIAN_NEW_USER_REG_PREFIX']
+        + os.environ['NEUSICIAN_NEW_USER_REG_PREFIX'],
         file=sys.stderr)
 
     procman.TMPDIR = app.config["TMPDIR"]
