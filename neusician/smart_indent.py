@@ -12,7 +12,7 @@ def expand(string):
             indent = basic_indent + '  ' * int(added_indents)
         else:
             indent = basic_indent = space
-        return indent + content
+        return indent + content.rstrip()
 
     def multiline(string):
         last_line_is_voice = False
@@ -20,8 +20,8 @@ def expand(string):
 
             parts = []
             partial_string = m.group(0)
-            if ' # ' in partial_string:
-                partial_string = partial_string[:partial_string.index(' # ')]
+            if ' ## ' in partial_string:
+                partial_string = partial_string[:partial_string.index(' ## ')]
             if ' | ' in partial_string:
                 for part in m.group(0).split(' | '):
                     parts.append(part)
@@ -31,12 +31,11 @@ def expand(string):
                     yield "\n---"
                 else:
                     last_line_is_voice = bool(re.match(r"[a-zA-Z]\w+:\s*\#?", string))
-                yield line(*re.match(numindent_rx, m.group(0)).groups())
-                continue
+                parts = [m.group(0)]
             else:
                 parts = [m.group(0)]
             
-            sep = ''
+            sep = ""
             for part1 in parts:
                 if sep: yield sep
                 if re.search(r' ;\d', part1):
@@ -55,6 +54,37 @@ def expand(string):
         finally:
             yield from multiline(current)
 
+
+def unindent_from(fileobj):
+    out = io.StringIO()
+    current_indent = []
+    initial = True
+    for line in fileobj:
+        while current_indent:
+            ci = sum(current_indent)
+            if line.startswith(" " * ci):
+                line = line[ci:]
+                break
+            else:
+                current_indent.pop(-1)
+        if (m := re.match("( +)", line)):
+            line = line[m.end():]
+            current_indent.append(m.end())
+        if line.startswith("---"):
+            if line.rstrip() != '---':
+                print("\n" + line.rstrip(), file=out)
+            else:
+                print(" | ", file=out, end="")
+            initial = True
+        elif line != "\n":
+            osp = " " if re.match(r"\d", line) else ""
+            if initial:
+                print(line.rstrip(), file=out, end="")
+                initial = False
+            else:
+                print(f" ;{len(current_indent)}{osp}{line.rstrip()}", file=out, end="")
+
+    return out.getvalue()
 
 
 if __name__ == '__main__':
