@@ -1,7 +1,7 @@
 import os, sys, stat
 from . import sompyler_procman as procman
 from .arbitextonotes import tones
-from .smart_indent import expand as indenter
+from .smart_indent import expand as indenter, unindent_from as unindenter
 from datetime import datetime
 from random import Random
 
@@ -258,7 +258,13 @@ def create_app(test_config=None):
             score_file = procman.worker_directory_of_user(
                     auth.current_user(), "score"
                 )
-            return send_file(score_file, mimetype="text/plain")
+            if request.args.get("concise"):
+                response = make_response()
+                response.headers['Content-Type'] = 'text/plain'
+                response.data(unindenter(open(score_file)))
+                return response
+            else:
+                return send_file(score_file, mimetype="text/plain")
 
     @app.route("/sompyle/result.ogg")
     @auth.login_required
