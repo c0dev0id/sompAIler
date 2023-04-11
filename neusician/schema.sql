@@ -250,7 +250,7 @@ BEGIN
     -- been expired or whose last password for more than three hours.
     DELETE FROM "user"
         WHERE MAX(IFNULL(last_password_match, 0), expires_not_before)
-        < DATETIME('now', '-3 HOURS')
+        < DATETIME('now', '-12 HOURS')
     ;
 END;
 
