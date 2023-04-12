@@ -1,0 +1,164 @@
+{% extends "base.tmpl" %}
+{% block heading %}Interactive demos{% endblock %}
+{% block title %}Markov-basierter Pseudozufallsgenerator von Tonfolgen{% endblock %}
+{% block main %}
+
+<p style="font-size:0.7rem"><a href="#workflow">Einleitungssermon überspringen</a></p>
+<p>Magst du Musik komponieren? Hoffst du auf eine Software, die dich dabei unterstützt?</p>
+
+<p>Hier wirst du keine finden, zumindest keine, die dich bei der <em>Komposition selbst</em> unterstützt, Begleitschemata findet u.ä. – Software, die einem das Denken abnimmt, ist mir suspekt.</p>
+
+<p>Das ist ein 100% deterministisches Tool zur Endlos-Inspiration für Komponisten, und solche die es werden wollen, garantiert ohne KI-Schmarrn.</p>
+
+<p>Es nimmt einen beliebigen Text von einem Umfang bis max. 1000 Buchstaben des Alphabets und andere Unicode-Zeichen entgegen. Der Text sollte für dich eine große Bedeutung haben, damit du Motivation genug hast, ausgehend von [Pause in Ticks, Tonhöhe, Länge in Ticks]-Tripeln selber weiter zu gehen, also diese in Noten zu gießen und selber auf deinem Instrument in Klang, und durch sparsame Korrekturen daran weiter zu Musik zu verwandeln.</p>
+
+<p>Der Computer »versteht« diesen Text nicht, für die Berechnung der Tonfolge ist nur relevant, wo jedes Unicode-Zeichen im Text erstmalig auftritt und an welchen Positionen es wiederholt wird. Zunächst wird daraus ein Digest berechnet, also eine ziemlich große Zahl, die dann inkrementell mit bestimmten verschiedenen Basen per Divisions-Modulo-Operation reduziert wird. Die Reste werden dann für die weitere Verarbeitung benötigt.</p>
+
+<p>Außerdem kann die voreingestellte Markov-Netz-Spezifikation geändert werden – dazu musst du sie selbst ergründen, dokumentiert ist sie derzeit nicht. Außerdem kannst du ändern, wie stark sich Noten in ihrer Länge unterscheiden, wie wahrscheinlich Pausen zwischen Noten und ggf. wie lang diese sind.</p>
+
+<div style="font-size:0.7rem">
+<p>Zukünftige Features, entworfen, aber noch nicht umgesetzt oder getestet:</p>
+<ul>
+<li>In einer opaken Base64-kodierten Zeichenfolge ultrakomprimierte Kette von notenbezogenen Änderungen hinsichtlich Harmonie und Polyphonie, Oktave, Intervallsprung, Länge und Position jeder einzelnen Note.</li>
+<li><p>Außerdem eine – längere, aber lesbarere – Zeichenfolge, die in kodierter Form angibt, wann wo welche Teilfolge von Noten (Motive) wie oft von welchem Instrument gespielt werden soll, nebst Informationen zu Takten, zu Tempi, Dynamik und Agogik.</p><p>Die Ausgabe erfolgt dann direkt nach Sompyler-Script. Da es sich dabei um YAML handelt, einem Datenserialisierungsformat mit dem erklärten Ziel, auch für Menschen lesbar zu sein, ist es auch für Anwender zur Weiterverarbeitung durch eigene Workflows geeignet, die Sompyler nicht verwenden möchten. Zum Beispiel Pianisten, denn das Klavier, in Sompyler mitgeliefert, klingt nach wie vor sicher unerkennbar scheußlich in ihren Ohren.</p></li>
+</ul>
+</div>
+
+<p>Der serverseitige Code ist Open Source und untersteht der General Public License, Version 3. Du kannst ihn dir auf <a href="https://gitlab.com/flowdy/neusician">Neusician's code repository</a> herunterladen, verändern, auf eigenem Gerät installieren. Sogar selbst den Service im Internet anbieten, denn mein Server ist jetzt halt nicht so pralle dimensioniert.</p>
+
+<div id="workflow">
+<h2>I: Input seed phrase, markov specification, ...</h2>
+<form method="POST" action="randomelody">
+<dl>
+<dt><label for="seedphrase">Seed phrase:</label></dt>
+<dd><textarea id="seedphrase" name="seedphrase" style="width:100%">{{ seed_phrase }}</textarea></dd>
+<dd>Any unicode text below 1000 characters.</dd>
+<dt><label for="markovspec">Markov net specification</label></dt>
+<dd><textarea id="markovspec" name="markovspec" style="width:100%">{{ markov_spec }}</textarea></dd>
+<dd>If you do not understand it, leave the default.</dd>
+<dt>Melody/Pause ratio</dt>
+<dd>
+<input type="number" id="melody-share" name="melody-share" value="{{ melody_pause_ratio[0] }}"></input>
+:
+<input type="number" id="pause-share" name="pause-share" value="{{ melody_pause_ratio[1] }}"></input>
+</dd>
+
+{% if creativity %}
+<dt>Creative hackery string<dt>
+<dd><input name="creativity"></dd>
+<dd><input type="checkbox" disabled="disabled"> Restore all my manual changes, as nothing has changed.</dd>
+{% endif %}
+</dl>
+
+<fieldset id="measure-props">
+<legend>Measure properties</legend>
+<input type="hidden" name="sompyler_init" value="{{ sompyler_init }}" \>
+<dl>
+<dt><label onclick="this.nextSibling.focus()">Beats: </label><input type="number" /></dt>
+<dd>Example: "2010" or "2.0.1.0", both means four-beat stressed, unstressed, half stress, unstressed</dd>
+<dt><label onclick="this.nextSibling.focus()">Subdivisions: </label><input type="number" /></dt>
+<dd>Example: "3" or "100" or "1.0.0" all means the same: a beat is a triplet of which the first note is stressed, the others are not.</dd>
+<dt><label onclick="this.nextSibling.focus()">Cut/Offset: </label><input type="number" /></dt>
+<dd>How many ticks break in the first measure, before the first note starts.</dd>
+<dt><label onclick="this.nextSibling.focus()">Beats per minute: </label><input type="number" /></dt>
+<dd>This value will be multiplied to get the ticks per minute value Sompyler expects.</dd>
+<dt><label onclick="this.nextSibling.focus()">Upper stress bound: </label><input type="number" /></dt>
+<dd>100 = 0dBFS</dd>
+<dt><label onclick="this.nextSibling.focus()">Lower stress bound: </label><input type="number" /></dt>
+<dd>0 = -100dBFS</dd>
+<p><label><input type="checkbox" name="wrap-keys" value="yes" {% if wrap_keys is eq "yes" %}checked="checked"{% endif %}> Band-limit keys to the region A0 to C8 of a standard keyboard. Keys originally beyond are set back or or forth an octave, following notes accordingly. There would be no difference in the end between C9, C9, C9 ..., or C9, C10, C11, ...  and C8, C8, C8 ...</label></p>
+
+</fieldset>
+
+<script type="text/javascript">$(function() {
+var sompyler_init = $("input[name=sompyler_init]");
+var inputs = $("#measure-props input[type=number]");
+var inputs_list = inputs.toArray();
+if (sompyler_init.val() !== '') {
+    $.each(sompyler_init.val().split("~"), function(i, elem) {
+    	inputs_list.shift().value = elem;
+    });
+}
+inputs.blur(function (e) {
+    values = [];
+    has_content = false;
+    inputs.each(function() {
+        values.push(this.value);
+	if (this.value != '') has_content = true;
+    });
+    if (has_content)
+        sompyler_init.val(values.join("~"));
+    else
+        sompyler_init.val('');
+    console.log(sompyler_init.val());
+    console.log("Here you are.");
+});
+});</script>
+
+<button>Get JSON</button>
+<button id="get-notes">Get notes</button>
+
+</form>
+
+</div>
+
+<table id="note-change-table" style="display: none;">
+<tbody>
+<tr style="display: none">
+<td class="harmony"></td>
+<td class="offset"></td>
+<td class="pitch-class"></td>
+<td class="octave"></td>
+<td class="step"></td>
+<td class="length"></td>
+</tr>
+</tbody>
+</table>
+
+<script type="text/javascript">
+$('#note-change-table').show();
+$(function () {
+    $('#get-notes').click(function (e) {
+        data = $("form").serializeArray().reduce((data,{name, value}) => {data[name] = value; return data}, {});
+	$.post("randomelody", data, function (data) {
+            var re = /^([^\d-]+)(-?\d+)([+-]\d+)?$/;
+            console.log("POSTed data to /randomelody, processing data ...");
+            $.each(data, function(i, e) {
+                var offset = e[0], tone = e[1], length = e[2],
+                    pitchClass, octave, steps;
+		m = re.test(tone);
+                if (m) {
+                    pitchClass = m[1];
+                    octave = m[2];
+                    steps = m[3];
+                }
+                else {
+                    pitchClass = '?';
+                    octave = 0;
+                    steps = 0;
+                }
+                node = $("#note-change-table tr").first().clone();
+                step = $('<input type="number">'+step);
+                $(".step", node).appendChild(step);
+                step.spinner();
+                offset = $('<input type="number">'+offset);
+                $(".offset", node).appendChild(offset);
+                offset.spinner();
+                length = $('<input type="number">'+length);
+                $(".length", node).appendChild(length);
+                length.spinner();
+                octave = $('<input type="number">'+octave);
+                $(".length", node).appendChild(octave);
+                octave.spinner();
+                node.appendTo('#note-change-table tbody');
+            });
+        });
+        $(this).remove();
+	e.preventDefault();
+        e.stopImmediatePropagation();
+    });
+});
+</script>
+
+
+{% endblock main %}

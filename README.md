@@ -94,9 +94,16 @@ Even if the provider has set up a few exclusive accounts for friends and themsel
 When someone uses the online sound synthesis facility, the webserver might process requests slower.
 
 Sompyler has not been developped with strong machine-level efficiency in mind.
-And it also has not been developped with online users in mind.
+And originally, it also has not been developped with online users in mind.
 After all, it is Python, even if Numpy and optionally Cython is used for mass math.
 
+Installation
+------------
+
+Configure instance/config.py.
+
+In templates/, copy base.tmpl.stub to base.tmpl and customize
+it to your website style.
 
 
 Copyright

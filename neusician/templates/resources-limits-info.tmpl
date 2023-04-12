@@ -1,0 +1,44 @@
+{% extends "base.tmpl" %}
+{% block heading %}Interactive demos{% endblock %}
+{% block title %}Limits information for this Online Sompyler{% endblock %}
+
+{% block main %}
+<p>The following info is valid for this <a href="/sompyle">Online Sompyler instance</a>. Other providers of this open source software may choose different settings. But this machine is small, despite the heavy task of offline, score-based audio synthesis.</p>
+
+<p>Due to limited free resources, the service lets logged-in users compete for reservation of one of <strong>{{ workers }}</strong> worker processes. Currently, <strong>{{ waiting }}</strong> users wait for a free worker. However, There is not much use in not trying, you need to try to climb in the ranking to be the next &hellip;</p>
+
+<p>If you do not get a free worker because all are occupied, you will see a "Service temporarily unavailable" page. You may retry in <em>regular</em> rather than shortest intervals possible to get reserved one. After at least an hour of using it, the service may reassign the worker process to another waiting requester. Go back then and save any score locally out of the input text area, since in this case it has already been overwritten on the server side. Measures are taken so that people are not able to look into foreign scores.</p>
+
+<p>At least an hour means the reservation time can be longer. It can grow eventually up to two hours. This depends on how heavy the load of a user is how much quota is reduced during the session. The reasoning is: The heavier the load, the longer the user needed to wait and it would be the more annoying if someone seized the worker too soon.</p>
+
+<h2>But let's peek onto the dark side &hellip;</h2>
+
+<p>Technically, though, the reservation time could also be shorter if a premium user purchased time in advance, so they can seize a worker process even in the period of protected reservation time of users with less purchased, let alone with "free" time. That purchased time however would pass by as well.</p>
+
+<p>In this test-bed, however, there are no "premium" users, paying or not. Requests are politely ignored or replied with a hint about the possibility of an own private instance of the software. Think about how much you trust the provider of any (e.g. of this) specific Online Sompyler instance in that respect. After all, though, the provider could change their mind at their sole descretion. It is not a public service where use of money to circumvent fairness, if fake or real, would be called "corruption".</p>
+
+<p>It is a private machine at last and due to the GPL, everyone could likewise provide Neusician and Sompyler driven by their hardware on their own terms insofar these are compatible to the General Public License. If at all for the public instead of just private which of course is possible, too. To technically enable fairness by technical means that also cannot avoid the possibility of "unfairness" and being transparent about that possibility should foster development of many <em>local</em> instances of the Neusician/sompyler software duo, no matter if provided for the public in a single case.</p>
+
+<h2>The secret</h2>
+
+<p>The secret how to sign up is told to invited in channels except email. Requests are ignored when too many arrive.</p>
+
+<p>The secret can be changed at the provider's discretion e.g. when it is found published somewhere. All users that have not been notified with the new secret cannot sign up for a new session.</p>
+
+<p>All invitation requests are also ignored or denied when a certain number of active users is reached in the average of a week.</p>
+
+<p>Users count as active for 12h since last login. In this time, re-login with their username and password. After this period, the output audio file, if they had one generated, is deleted by then, too. So backup not only the score but also the audio file on private local or webspace if you find worth it.</p>
+
+
+<h2>Per-session limits</h2>
+<p>There are per-session limits opposed on Sompyler operation which are not in effect by default if vanilla Sompyler is run on a local device. These limits serve use of hardware and time resources fairly shared between users and are currently set to following values:</p>
+
+<ol>
+<li><p>Maximum length of each tone, in samples: <strong>{{ limits[0] }}</strong> = 1 million samples are ~22.66s at a rate of 44,100 samples per second). Also effects the maximum number of reverb layer samples.</p></li>
+<li><p>Maximum total number of shape polynomic coordinates of each tone. If exceeded, reduce sound complexity. <strong>{{ limits[1] }}</strong> are set so the "piano" sound can be used.</p></li>
+<li><p>Maximum of calculated atoms per worker session is <strong>{{ limits[2] }}</strong>, covers envelope factors (each sample), modulation and oscillation samples, and virtual reverb layer samples, excluding the samples of the dry substance. Especially use of reverb will reduce it heavily, so best avoid it until you are content with your draft "recorded" in the free field (G=1000 millions). Observe the percent value on the status page. Once used up, you can no longer use the service with reverb on and you can neither re-render notes in that session. You can purge it but that does not mean you will get a new worker with another session started right after.</p></li>
+<li><p>Maximum total playback length in seconds: <strong>{{ limits[3] }}</strong>=1000s)</p></li>
+<li><p>Tone cache quota: <strong>{{ limits[4] }}</strong>=Megabyte. Tones cached but no longer used will be deleted to free space in your quota.</p></li>
+</ol>
+
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.tmpl" %}
+{% block heading %}Interactive demos{% endblock %}
+{% block title %}HTTP 503 Service temporarily unavailable{% endblock %}
+{% block main %}
+
+<p>Too many users compete for occupation of <strong>{{ workers }}</strong> Sompyler instances running in parallel at most. You are on rank <strong>{{ wait_rank }} of {{ waiting }}</strong> in the queue of waiting users.</p>
+
+<h2>How to climb the ranking?</h2>
+
+<p>On the one hand, with the time you climb in the ranking. On the other hand, the ranking algorithm takes into account how you retry rhythmically, i.e. in evenly-sized intervals. If divergent, the size should rather grow than shrink to outweigh any volatile network latencies on the route between you and the server.</p>
+
+<h1>Worth knowing when you got one: About limits</h1>
+
+<h2>Why are there limits opposed on users in the first place?</h2>
+
+<p>These measures are taken for efficient usage of low-cost resources fairly shared in my endeavour to give others a realistic impression of how nerd's synthesizer Sompyler "feels" like, so that noone can block everyone else from using it, at least not without intent.</p>
+
+<p>Furthermore, first and foremost Sompyler is optimized for comprehensibility of the source code. Real-time synthesizers in the consumer market are optimized for low-latency and are no longer comprehensible to people who did not study math.</p>
+
+<p>Because Sompyler is therefore rather slow, music can only be constructed from text, written a-priori by you, then rendered by your resources, then brought to your ears. The only machine-optimization: the calculation of the approximation of polygones is compiled into binary form to make it a couple of times faster compared to the pure-python version that is used as a fallback.</p>
+
+
+<h2>What are the limits?</h2>
+
+<p>Once you get a worker reserved, it will be yours for about an hour, plus up to 2 hours that you waited. It is specifically ready to synthesize your score-described music until you have used up the quota set for every user. If you have not made an update request for an hour, you will loose your worker.</p>
+
+<p>The quota limits the number of total atomic samples rendered, i.e. up to <strong>{{ resources }}</strong>. This is apparently a big number, but have in mind that sounds can be built of additive waves of primitive forms each, and can sound in chords, too, and every envelope and every modulation adds to this value separately for the entire length of a tone. Practically, it is not all that much when using complex sounds like that one of the piano. If there is an error so that no soundfile can be generated, no resources are "charged".</p>
+
+<p>There are other limits as well. In contrary to the dynamic resources to exhaust however, these limits can be coped with by editing the score. This is the tone's maximal length in samples, <strong>{{ tone_length }}</strong> and the length of the piece, that is <strong>{{ total_play_length }}</strong> seconds. Also, the overall size of cached sounds may not exceed <strong>{{ cache_size }}</strong> bytes. But sounds that do not map to tones present in the scores will be deleted and substracted from your quota in the reverse order of how many times they where not needed. This happens on demand when new tones need to be generated. In case you need them again, they can be resynthesized as long there are dynamic resources left to exhaust.</p>
+
+
+<h2>How to get rid of the limits?</h2>
+
+<p>With a bit of knowledge of the Python programing language, I am sure you can deploy and use <a href="https://gitlab.com/flowdy/sompyler">Sompyler</a> locally on your own device. That cuts you free from all these limits.</p>
+
+<p>On top of Sompyler, you can deploy <a href="https://gitlab.com/flowdy/neusician">Neusician</a> to make it accessible via the web browser for you, family and friends, and maybe for the public like this instance. Who defines the limits then, if any, is you.</p>
+
+
+{% endblock %}
+

@@ -1,0 +1,112 @@
+{% extends "base.tmpl" %}
+{% from 'yaml-input.tmpl' import yamlform %}
+{% block heading %}Interactive demos{% endblock %}
+{% block title %}Online Sompyler{% endblock %}
+
+{% block main %}
+
+
+<div id="errors" style="{% if not errors %}display: none; {% endif %}border: 2px solid red; margin: 0 1rem">
+<h2 style="margin: 0; background-color:yellow;">Errors, warnings and/or potentially important notes</h2>
+
+<pre>{{ errors }}</pre>
+
+</div>
+
+{% if remaining_time %}
+<div id="progress">
+<h2>Progress</h2>
+
+<progress id="progress-bar" style="width: 100%;">{{ (reused + currently_rendered_notes) / (notes_in_total or 1) * 100 }}%</progress><script type="text/javascript">$(function () { $("#progress-bar").progressbar({ max: {{ notes_in_total }}, value: {{ reused + currently_rendered_notes }} }); });</script>
+<p>Reused <span id="reused-cnt">{{ reused }}</span>, synthesized <span id="currently-rendered-notes-cnt">{{ currently_rendered_notes }}</span> of <span id="notes-in-total-cnt">{{ notes_in_total }}</span> tones.<br><span id="remaining-time">{{ remaining_time }}</span>{% if not frozen %} <span id="manual-reload">Click <button onclick="update_progress(); return false;">update status</button> every now and then, but you do not accelerate the process that way.</span>{% endif %}</p>
+</div>
+<div style="display: none">
+{% endif %}
+<h2>Resulting audio</h2>
+
+<audio controls>
+<source src="/sompyle/result.ogg?{{ timestamp }}" type="audio/ogg" />
+</audio><input id="loopswitch" type="checkbox" onclick="this.previousElementSibling.loop = this.checked"><label for="loopswitch"> loop</label>
+
+<p>Please download the file if you find it worth that.</p>
+
+<p>The file does not stay substantially longer on the server than the user who generate it can login. If an error occurs so that the file is not re-generated, and you cannot fix the score so it is, you will not be able to access it any more (it would be empty anyway). That may be because the quota of total samples rendered is exceeded, for instance.</p>
+
+{% if remaining_time %}
+</div>
+{% endif %}
+
+<p>You still have <span id="total-samples-calculated">{{ total_samples_calculated }}</span>% of your quota.</p>
+
+{{ yamlform(yamlcode, user, quota) }}
+
+<h2>Parsed measures and notes</h2>
+
+<ol id="notes-log" style="font-family:monospace;">
+{% for line in notes_log %}
+<li>{{ line }}</li>
+{% endfor %}
+</ol>
+
+<script type="text/javascript">
+function update_progress () {
+    progdiv = $('#progress');
+    prog = $('#progress-bar');
+    $.getJSON('/sompyle/status.json', function (status) {         
+         prog.prop("value",
+             status["reused"] + status["currently_rendered_notes"]
+         );
+	 prog.prop("max", status["notes_in_total"]);
+         $('#remaining-time').text(status["remaining_time"]);
+         if ( status["errors"] != '' )
+	     $('#errors').show().find('pre').text(status["errors"]);
+         $('#reused-cnt').text(status['reused']);
+         $('#currently-rendered-notes-cnt').text(status['currently_rendered_notes']);
+         $('#notes-in-total-cnt').text(status['notes_in_total']);
+         notes_log = $('#notes-log');
+         status["notes_log"].forEach(
+             (x, i) => $("<li>").text(x).appendTo(notes_log)
+         );
+         if ( status["frozen"] === true ) {
+             if ( "file_accomplished" in status ) {
+                 $('audio').get(0).src = '/sompyle/result.ogg?' + Date.now(); 
+                 progdiv.hide();
+                 $("#progress + div").show();
+             }
+	     $("#total-samples-calculated").text(
+		status["total_samples_calculated"]
+	     );
+             document.forms[0].elements.namedItem("quota").value = ~~status['total_samples_calculated'];
+             $("#manual-reload").hide();
+         }
+         /* else {
+             window.setTimeout(update_progress, 300);
+             console.log("setTimeout handler registered again");
+         }
+    	 $('#manual-reload').hide(); */
+    });
+}
+
+$(function() {
+   if ( "{{ file_accomplished or frozen }}" != "True" ) {
+       $("#progress-bar").prop("value", false);
+       window.setTimeout(update_progress, 300);
+   }
+   $("#notes-log").delegate("li", "click mouseenter", function(event) {
+       let li = $(this);
+       if ( li.find("a").length > 0 ) return;
+       console.log("Make a link");
+       let text = li.text();
+       let m = text.match(/ note (\d+) /);
+       if (m) {
+	   li.replaceWith("<li>" + text.replace(
+               "note " + m[1],
+	       '<a href="/sompyle/analyze/tone-'
+               + m[1] + '">note ' + m[1] + '</a>') + "</li>"
+           ).click(function(e) { e.stopImmediatePropagation() });
+       }
+   })
+});
+</script>
+{% endblock %}
+

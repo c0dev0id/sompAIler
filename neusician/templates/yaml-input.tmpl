@@ -1,0 +1,115 @@
+{% extends "base.tmpl" %}
+{% block heading %}Interactive demos{% endblock %}
+{% block title %}YAML input to sompyler ...{% endblock %}
+
+{% macro yamlform(yamlcode, user, quota) %}
+<form id="yamlform" method="POST" action="/sompyle/reserved-a-worker-for-tests" style="display: block; width:90%; margin:0 auto;">
+<textarea style="width:100%;height:50vh" name="yamlcode" placeholder="plain YAML serialized data. See also hints below for simpler input on mobile devices">{{ yamlcode if yamlcode is not none }}</textarea>
+<br>
+<div style="line-height:2rem"><label for="w0mode">Reverberation and other modes:</label> <select name="w0mode">
+ <optgroup label="No quota use, prefer while drafting">
+ <option value="ff">Free-field acoustics, no reverb</option>
+ <option value="check-only">Check only, free-field audio (maybe)</option>
+ </optgroup>
+ <optgroup label="You've kept much quota to run out of?">
+ <option value="reverb:small-hall">some small hall</option>
+ <option value="reverb:small-hall2">smaller hall, chamber</option>
+ <option value="reverb:church">empty concert hall? church? or cathedral</option>
+ <option value="reverb">free-style "room" definition s. score section #1</option>
+ </optgroup>
+</select>
+{% if quota != '' %}<nobr><label for="cap-quota">Use up to </label><input name="quota" id="cap-quota" type="number" style="width: 3em" value="{{ quota }}" max="{{ quota }}">% of quota</nobr>{% endif %}
+<button name="action" value="sompyle">Sompyle</button>
+<button name="action" title="(under construction)" value="rawanalysis">introspection and limited changes</button><button type="reset">Undo changes</button>
+{% if user %}
+<button name="action" value="delete" onclick="if (document.forms[0].yamlcode.value !== '') { alert('If input field is not empty, this is a no-op.'); return false }">Purge session</button>{% else %}<!-- public access, no further actions. --><a href="/sompyle/reserved-a-worker-for-tests">Have an account?</a>{% endif %}
+</div>
+</form>
+{% endmacro %}
+{% block main %}
+
+
+<p style="float:right;"><a href="#yamlform">Skip to text input</a></p>
+<h2>General usage notes</h2>
+
+<ol>
+<li><p>This is <em>not</em> a public or commercial service, just a private test-bed used on personal invitation basis by those adept at facing error messages, calmly thinking about and at notifying them if clueless.</p></li>
+<li><p>Action buttons <em>all require login</em>. Domain owner gathers alpha-testers in private and tells them how sign up for a session. Users are registered and only need to login until 12h after last interaction, the cached and output files cannot be recovered.</p></li>
+<li><p>Being an alpha-tester requires exchange of WhatsApp or Signal contacts so you can make support queries and report bugs. For the latter, and to clone and deploy open-source Sompyler to your own device if you prefer, you may also use <a href="https://gitlab.com/flowdy/sompyler">sompyler</a> repository facilities on Gitlab. Alpha-testing contact members are able to create accounts themselves at any time without prior action by the webmaster. Please understand that when a certain number of active alpha-testers is reached, further requests are ignored or politely denied.</p></li>
+<li><p>To establish a humble plenty of fairness among the users competing for limited resources (after all, it is a quite small machine), I went lengths to implement measures so it is equally cumbersome for all. Read how on the <a href="/sompyle/limits-info">limited resources information page</a>.</li>
+<li><p>There is some, i.e. incomplete documentation on the syntax:</p><ul>
+  <li><a href="https://gitlab.com/flowdy/sompyler/-/wikis/script-grammar">Wiki on Sompyler script grammar</a></li>
+  <li><a href="https://gitlab.com/flowdy/sompyler/-/tree/master/doc">sompyler/doc directory</a></li>
+</ul>
+</li>
+</ol>
+
+{{ yamlform(yamlcode, user, quota) }}
+
+<h2>Hints on easier input</h2>
+<ul>
+<li><p>On mobile devices it is tedious to input space-space-space etc. to get the needed indentation for every line. Instead, just type a positive
+integer indicating the indentation level <em>to add</em> to the indentation of the last line, somewhere before the current one, that has proper space-indicated indent, if any.</p>
+<p>In smart-indented lines, you can also replace new-line by " ;" (i.e. space and semicolon).</p></li>
+<li><p>At any time, you can discard changes or restore your input as was sent last to the server by clicking "Reload from server, if possible".</p><p>Undoing includes having any smart indentation resolved if, and only if you have sent it to the server successfully once.</p></li>
+</ul>
+
+<h2>Examples</h2>
+
+<h3>Interesting files on this machine</h3>
+
+<p>Files in the list below demonstrate how the Sompyler language tackles different contexts of sound generation:
+
+<ul>
+{% for file in interesting_files %}
+   <li><a href="/files/{{file}}">{{file}}</a></li>
+{% endfor %}
+</ul>
+<ul>
+	<li><strong>lib/rooms/*.splr</strong>: A room specification can be selected to properly reverberate the sound. You can also use and make a variant of the content of a file by embedding it in the initial section of the score. Please introduce it with <kbd>room:</kbd> and indent the lines with equal number of spaces.</li>
+        <li><strong>lib/tones_euro_de+en.splt</strong> can be used by writing
+<pre>
+tuning:
+    base: tones_euro_de+en
+    ...
+    # In the place of the ellipsis, you can put and vary any property
+    # of the [basics] section, and extend the [scales] and [chords] section
+    # by new items, but group these under an "scales:" and "chords:" entry.
+</pre>
+However, if you do not redefine any property or add any scale or chord, you can omit tuning altogether. That file is implied default. Thus, instead of "440.0" wherever a pitch is expected, you can use "A4" or "a'".
+</li>
+	<li><strong>instruments/*.spli</strong>: instrument definitions you can use several ways, all in the initial section:<ul>
+		<li><pre>
+stage:
+    voice_name: [...] dev/piano
+</pre></li>
+		<li><pre>
+stage:
+    voice_name:
+        [...]
+        instrument: dev/flute
+</pre></li>
+		<li><pre>
+stage:
+    flute1: 1|1 0 # no instrument part
+    flute2:
+        [...] # no "instrument:" entry
+    other_voicename:
+        [...]
+        instrument: flute # no "dev/" or other directories, then following
+                          # entry must be there:
+
+instrument flute:
+    NOT_CHANGED_SINCE: YYYY-MM-DD HH:MM:SS # Timestamp of last change:
+                                           # If omitted, tones are
+                                           # re-rendered every time,
+    character:                             # no matter if there is need.
+	# Copied, indented and modified file content
+        # If file has metadata and a "character:" entry, take its value
+</pre></li>
+</ul>
+<li><strong>scores/*.spls</strong>: Copy the file content into the text input. It should simply "sompyle".</li>
+
+</ul>
+
+{% endblock %}
