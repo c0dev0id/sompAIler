@@ -58,7 +58,7 @@ if [ "${IND-0}" -gt "${OUTD-0}" ]; then
 	esac
 	: > "${T}/status"
         . venv/bin/activate
-        ./scripts/sompyle -v "--workers=${WORKERS_CNT-1}" $W0MODE "${T}/score" "$OUTFILE" > "${T}/OUT.log" 2> "${T}/ERR.log" &
+	./scripts/sompyle -v "--workers=${WORKERS_CNT-1}" "${T}/score" "$OUTFILE" $W0MODE > "${T}/OUT.log" 2> "${T}/ERR.log" &
 	PID=$!
         printf "%s %d" "${U}" "$PID" > "${T}/worker.pid"
         while [ ! -f "$OUTFILE" ] || [ -s "$OUTFILE" ]; do

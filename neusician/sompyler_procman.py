@@ -1,7 +1,7 @@
 import os, subprocess, re
 from io import StringIO
 from glob import glob
-import sqlite3
+import sqlite3, json
 
 con = None
 con_path = None
@@ -35,6 +35,7 @@ def _get_cursor():
         except AttributeError as e:
             if first_time is True:
                 con = sqlite3.connect(con_path)
+                con.execute("PRAGMA FOREIGN_KEYS=ON")
                 first_time = -1
             else:
                 raise
@@ -83,6 +84,15 @@ def register_user(name, password):
         )
 
     con.commit()
+
+
+def set_password_of_user(name, password):
+
+    c = _get_cursor()
+    c.execute("UPDATE user SET password=? WHERE name=?;", (password, name))
+
+    con.commit()
+
 
 def get_hashed_password_of_user(name):
 
@@ -174,25 +184,35 @@ def initialize_sompyler(user, score):
         con.commit()
 
 
-def get_status(user, w0mode=False, tail_log=False):
-    c = _get_cursor()
-    resources = next(c.execute("""
+def get_quota(user, c=None):
+    if c is None:
+        c = _get_cursor()
+    return next(c.execute("""
         SELECT given_resources - used_resources
           FROM user u
           JOIN worker w ON u.ROWID=w.userid
          WHERE u.name=?
         """, (user,)
-    ))[0]
-    sompyler_limits = SOMPYLER_LIMITS.replace("::", f":{resources}:")
+    ), (None,))[0]
+
+def get_status(user, w0mode='ff', tail_log=False, quota=100):
+    c = _get_cursor()
+    resources = get_quota(user, c)
+    sompyler_limits = SOMPYLER_LIMITS.replace(
+            "::",
+            f":{min(resources,int(quota/100*STD_RESOURCES))}:"
+        )
 
     my_env = os.environ.copy()
     my_env["SOMPYLER_LIMITS"] = sompyler_limits
-    if w0mode:
+    if w0mode is not None:
         my_env["W0MODE"] = w0mode
+    else:
+        raise RuntimeError("no w0mode")
 
     wdir = worker_directory_of_user(user)
 
-    if tail_log: my_env["SKIP_KNOWN_LINES"] = 1
+    my_env["SKIP_KNOWN_LINES"] = str(1 if tail_log else '')
 
     try:
         res = subprocess.run(
@@ -210,7 +230,7 @@ def get_status(user, w0mode=False, tail_log=False):
 
     progress, *status = status.split("\n")
     current, reused, total, remtime, new_res = progress.split()
-    new_res = int(new_res)
+    new_res = int(float(new_res))
 
     if status:
         m = re.search(r"\S+\.\w+", status[0])
@@ -228,9 +248,8 @@ def get_status(user, w0mode=False, tail_log=False):
                 text_progress = text_progress.replace(
                         '(ETA', 'Synthesizing tones ... ('
                     )
-            status['remaining_time'] = text_progress
-            status['frozen'] = not status['remaining_time'].endswith('s)')
-
+            status = {'remaining_time': text_progress }
+            status['frozen'] = '...' not in status['remaining_time']
 
     if new_res: # We ensure externally that res > 0 only once, just
             # the next call after having the audio file been
@@ -270,6 +289,51 @@ def get_status(user, w0mode=False, tail_log=False):
         'errors': errors,
     }
 
+def analyze_tone(user, tone_number, what_to_return):
+
+    if what_to_return == "outline":
+        c = _get_cursor()
+        resources = get_quota(user, c)
+        sompyler_limits = SOMPYLER_LIMITS.replace(
+                "::",
+                f":{resources}:"
+            )
+        my_env = os.environ.copy()
+        my_env["SOMPYLER_LIMITS"] = sompyler_limits
+        flag = f"--outline"
+    elif what_to_return == "sound":
+        flag = f"--sound"
+        my_env = os.environ
+    else:
+        raise RuntimeError(f"{what_to_return} not supported")
+
+    try:
+        proc = subprocess.run(
+                ['analyze-tone',
+                    worker_directory_of_user(user), str(tone_number), flag
+                ], env=my_env, capture_output=True, check=True
+            )
+        stdout = proc.stdout
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(e.stderr)
+    else:
+        jsonstr = proc.stdout.decode("utf8").split("\n")[-2]
+        stdout = json.loads(jsonstr)
+
+    if (new_res := stdout.get("calculated_samples")):
+            # We ensure externally that res > 0 only once, just
+            # the next call after having the audio file been
+            # generated.
+        c.execute("""
+            UPDATE worker SET used_resources=used_resources+?
+            WHERE userid=(SELECT ROWID FROM user WHERE name=?)
+        """,
+            (new_res, user)
+        )
+        resources -= new_res
+        con.commit()
+
+    return stdout["file"]
 
 def waiting_stats_for_user(user):
     c = _get_cursor()
@@ -278,7 +342,7 @@ def waiting_stats_for_user(user):
           FROM waiting_users wu
           JOIN user u ON u.ROWID=wu.userid
          WHERE u.name=?
-    """, (user,) ))[0]
+    """, (user,) ), (None,))[0]
     waiting = next(c.execute("SELECT count(*) FROM waiting_users"))[0]
     workers = next(c.execute("SELECT count(*) FROM worker"))[0]
     return { 'wait_rank': wait_rank, 'waiting': waiting, 'workers': workers }
