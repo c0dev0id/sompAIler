@@ -1,4 +1,4 @@
-import re
+import re, io
 
 def expand(string):
 
