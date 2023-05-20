@@ -4,7 +4,7 @@ def expand(string):
 
     basic_indent = ''
 
-    numindent_rx = r"^(\d+(?!:))?([ \t]*)(.+)"
+    numindent_rx = r"^(\d+(?!\d*:))?([ \t]*)(.+)"
 
     def line(added_indents, space, content):
         nonlocal basic_indent
