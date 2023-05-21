@@ -366,7 +366,7 @@ def create_app(test_config=None):
             if request.args.get("concise"):
                 response = make_response()
                 response.headers['Content-Type'] = 'text/plain'
-                response.data(unindenter(open(score_file)))
+                response.data = unindenter(open(score_file)).encode("utf-8")
                 return response
             else:
                 return send_file(score_file, mimetype="text/plain")
