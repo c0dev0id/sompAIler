@@ -59,6 +59,7 @@ def unindent_from(fileobj):
     out = io.StringIO()
     current_indent = []
     initial = True
+    newline = False
     for line in fileobj:
         while current_indent:
             ci = sum(current_indent)
@@ -73,14 +74,17 @@ def unindent_from(fileobj):
         if line.startswith("---"):
             if line.rstrip() != '---':
                 print("\n" + line.rstrip(), file=out)
+                newline = False
             else:
                 print(" | ", file=out, end="")
             initial = True
-        elif line != "\n":
+        elif line == "\n":
+            newline = True
+        else:
             osp = " " if re.match(r"\d", line) else ""
             if initial:
                 print(line.rstrip(), file=out, end="")
-                initial = False
+                initial = newline = False
             else:
                 print(f" ;{len(current_indent)}{osp}{line.rstrip()}", file=out, end="")
 
