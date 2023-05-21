@@ -1,6 +1,7 @@
-import os, sys, stat, subprocess, json
+import os, sys, stat, subprocess, json, re
 from . import sompyler_procman as procman
 from .arbitextonotes import tones
+from .arbitrarygrooves import preprocess as ag_preprocess
 from .smart_indent import expand as indenter, unindent_from as unindenter
 from datetime import datetime
 from random import Random
@@ -233,7 +234,12 @@ def create_app(test_config=None):
                         procman.delete_user_and_files(user)
                         return "Your session is erased.", 410
                     else:
-                        return "Bad request", 400
+                        return "yamlcode is not empty", 400
+                if (m := re.search(r"\|[\[\s]|\n---", request.form["yamlcode"])):
+                    if "\n*** " in request.form["yamlcode"][:m.start()]:
+                        yamlcode = ag_preprocess(yamlcode)
+                else:
+                    return "yamlcode does not contain any measures", 400
                 procman.initialize_sompyler(user, yamlcode)
 
             if request.form["action"] == "rawanalysis":

@@ -10,18 +10,7 @@ BASE64URL_CHARS = { k: v for v, k in enumerate(BASE64URL_STR) }
 class CreativeStringError(RuntimeError):
     pass
 
-def tones(
-        seed_phrase, model, melody_pause_ratio=(1,1),
-        creativity=None, compositionalavi=None,
-        restrict_88keys=False
-    ):
-    """ Tones from a seed phrase (any unicode string) based
-        on a markov net model.
-    """
-
-    melody_level, pause_level = melody_pause_ratio
-    melody_level += pause_level
-    
+def seedphrase_to_bigint(seed_phrase):
     base = 0
     def incr():
         nonlocal base
@@ -38,6 +27,23 @@ def tones(
     for i, r in enumerate(reversed(remainders)):
         big_number += r * base ** i
     
+    return big_number
+
+
+def tones(
+        seed_phrase, model, melody_pause_ratio=(1,1),
+        creativity=None, compositionalavi=None,
+        restrict_88keys=False
+    ):
+    """ Tones from a seed phrase (any unicode string) based
+        on a markov net model.
+    """
+
+    melody_level, pause_level = melody_pause_ratio
+    melody_level += pause_level
+
+    big_number = seedphrase_to_bigint(seed_phrase)
+
     markov_scheme, tone_it = markov_sensible_tone_getter(
         re.sub(r"\s", "", model)
     )
