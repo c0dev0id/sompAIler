@@ -30,13 +30,15 @@
 
 <p>Please download the file if you find it worth that.</p>
 
-<p>The file does not stay substantially longer on the server than the user who generate it can login. If an error occurs so that the file is not re-generated, and you cannot fix the score so it is, you will not be able to access it any more (it would be empty anyway). That may be because the quota of total samples rendered is exceeded, for instance.</p>
+<p>The file does not stay substantially longer on the server than the owning user can login. If an error occurs so that the file is not re-generated, and you cannot fix the score so it is, you will not be able to access it any more (it would be empty anyway). That may be because the quota of total samples rendered is exceeded, for instance.</p>
 
 {% if remaining_time %}
 </div>
 {% endif %}
 
 <p>You still have <span id="total-samples-calculated">{{ total_samples_calculated }}</span>% of your quota.</p>
+
+<p>To post the source somewhere on the internet, provided you have the rights or the copyright holder's consent to do so, you may prefer the <a href="score.spls">source "as is"</a> or the nerdier <a href="score.spls?concise=yes">concise format</a>.</p>
 
 {{ yamlform(yamlcode, user, quota) }}
 
