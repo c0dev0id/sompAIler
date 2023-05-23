@@ -64,6 +64,8 @@ arbitext = []
 def preprocess(infileobj=textinp):
     global getter
 
+    slurp_mode = None
+
     for line in infileobj:
     
         if line.startswith('*** '):
