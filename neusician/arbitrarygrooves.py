@@ -54,7 +54,7 @@ def voiceline(length, height, melody_share=1, pause_share=1, depth=0):
 def expand_line(line):
 
     return re.sub(
-            r'\((?=\d)[\w,=\s]+\)',
+            r'\((?=\d)[\w,=\s-]+\)',
             lambda m: eval(f'voiceline{m.group(0)}'),
             line
         )
