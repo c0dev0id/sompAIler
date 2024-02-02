@@ -386,7 +386,7 @@ def create_app(test_config=None):
               procman.TMPDIR, "OUT", f"{auth.current_user()}.ogg"
             ),
             mimetype="audio/ogg",
-            cache_timeout=0
+            max_age=0
         )
 
     @app.route("/sompyle/analyze/tone-<int:number>")
