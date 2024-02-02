@@ -50,7 +50,7 @@ instrument p: {{}} # So simple, it is only a single sine.
 ---
 _meta:
   stress_pattern: {",".join(str(x) for x in beats)};{",".join(str(x) for x in subdivisions)}
-  ticks_per_minute: {ticks_per_minute}
+  beats_per_minute: {beats_per_minute}
   upper_stress_bound: {upper_stress_bound}
   lower_stress_bound: {lower_stress_bound}
   cut: {cut}
