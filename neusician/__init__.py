@@ -102,44 +102,46 @@ def create_app(test_config=None):
                             ]
                     elif "0" in subdivisions:
                         subdivisions = list(subdivisions)
-                        yamlcode = make_yaml_code(
-                            plaintones,
-                            beats=[
-                                int(x) for x in sompyler_init[0].split(".")
-                            ] if "." in sompyler_init[0] else list(
-                                sompyler_init[0]
-                            ),
-                            subdivisions=subdivisions,
-                            cut=int(sompyler_init[2]),
-                            beats_per_minute=int(sompyler_init[3]),
-                            upper_stress_bound=int(sompyler_init[4]),
-                            lower_stress_bound=int(sompyler_init[5])
-                        ).getvalue()
-                        random_id = Random().randrange(1,10000)
-                        scorefile = open(f"/tmp/sompyled-{random_id}.yaml", "w")
-                        print(yamlcode
-                          + "\n# -------"
-                          + "\n# You can reproduce above output simply by URL:"
-                          + "\n# " + url_for('randomelody_stage1',
-                              _external=True,
-                            **{
-                              'seedphrase': request.form["seedphrase"],
-                              'markov': request.form["markovspec"],
-                              'melody-share': request.form["melody-share"],
-                              'pause-share': request.form["pause-share"],
-                              'sompyler_init': request.form["sompyler_init"],
-                              'wrap_keys': request.form.get("wrap-keys")
-                            }),
-                          file=scorefile)
-                        os.chmod(scorefile.name, stat.S_IREAD)
-                        return redirect(
-                             f"/sompyle?yamlcode-id={random_id}", code=303
-                        )
+
+                    yamlcode = make_yaml_code(
+                        plaintones,
+                        beats=[
+                            int(x) for x in sompyler_init[0].split(".")
+                        ] if "." in sompyler_init[0] else list(
+                            sompyler_init[0]
+                        ),
+                        subdivisions=subdivisions,
+                        cut=int(sompyler_init[2]),
+                        beats_per_minute=int(sompyler_init[3]),
+                        upper_stress_bound=int(sompyler_init[4]),
+                        lower_stress_bound=int(sompyler_init[5])
+                    ).getvalue()
+                    random_id = Random().randrange(1,10000)
+                    scorefile = open(f"/tmp/sompyled-{random_id}.yaml", "w")
+                    print(yamlcode
+                      + "\n# -------"
+                      + "\n# You can reproduce above output simply by URL:"
+                      + "\n# " + url_for('randomelody_stage1',
+                          _external=True,
+                        **{
+                          'seedphrase': request.form["seedphrase"],
+                          'markov': request.form["markovspec"],
+                          'melody-share': request.form["melody-share"],
+                          'pause-share': request.form["pause-share"],
+                          'sompyler_init': request.form["sompyler_init"],
+                          'wrap_keys': request.form.get("wrap-keys")
+                        }),
+                      file=scorefile)
+                    os.chmod(scorefile.name, stat.S_IREAD)
+                    return redirect(
+                         f"/sompyle?yamlcode-id={random_id}", code=303
+                    )
                 else:
                     return jsonify(plaintones)
 
             except MarkovSpecError as e:
                 return "Markov specification invalid: " + str(e), 400
+
         else:
             markov = request.args.get("markov")
             if not markov:
