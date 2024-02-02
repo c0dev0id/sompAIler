@@ -22,9 +22,30 @@ def expand(string):
             partial_string = m.group(0)
             if ' ## ' in partial_string:
                 partial_string = partial_string[:partial_string.index(' ## ')]
-            if ' | ' in partial_string:
-                for part in m.group(0).split(' | '):
-                    parts.append(part)
+            if ' |' in partial_string:
+                ext = False
+                allpart = []
+                for part in m.group(0).split(' |'):
+                    if (lm := re.match(r'(?:L|\s*_loop:\s+)(\d+) ', part)):
+                        if allpart: 
+                            parts.append(
+                                    f"_loop: {loop} ;0 " + ' | '.join(allpart)
+                                )
+                            allpart.clear()
+                        loop = int(lm.group(1).strip())
+                        ext = loop != 1
+                        part = part[lm.end():]
+                        if ext: 
+                            allpart.append(part)
+                            continue
+                        parts.append(part)
+                    elif ext:
+                        allpart.append(part.lstrip())
+                        continue
+                    else:
+                        parts.append(part.strip())
+                if allpart:
+                    part = f"_loop: {loop} ;0 " + ' | '.join(allpart)
             elif not m.group(1):
                 string = m.group(3)
                 if string[0] in "|[" and not last_line_is_voice:
@@ -92,14 +113,15 @@ def unindent_from(fileobj):
 
 
 if __name__ == '__main__':
-    for line in expand(
+    for text in (
             "name: Florian H.\n"
             "age: too old to get indentation right in the morning\n"
             "character:\n"
             "    stressed: no\n"
             "0is_friendly:\n"
             "1often: yes, kind of\n"
-            "1now: without a coffee, rather mad\n"
-        ): print(line)
-    
-    for line in expand("name: Florian H. ;0age: too old to get indentation right in the morning ;0character: ;1stressed: no ;1is_friendly: ;2often: yes, kind of ;2now: without a coffee, rather \\\\ ;2mad"): print(line)
+            "1now: without a coffee, rather mad\n",
+            "name: Florian H. ;0age: too old to get indentation right in the morning ;0character: ;1stressed: no ;1is_friendly: ;2often: yes, kind of ;2now: without a coffee, rather \\\\ ;2mad",
+            "name: Hey, you! |L4 one | two | three | four | _loop: 1 greeting: Bye | comment: Get out of here"
+         ):
+        for line in expand(text): print(line)
