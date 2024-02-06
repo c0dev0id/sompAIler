@@ -14,8 +14,14 @@ def expand(string):
             indent = basic_indent = space
         return indent + content.rstrip()
 
+    look_for_loop = False
+    ext = False
+    loop = 1
+
     def multiline(string):
+        nonlocal look_for_loop, ext, loop
         last_line_is_voice = False
+
         for m in re.finditer(numindent_rx, string, re.MULTILINE):
 
             parts = []
@@ -23,7 +29,6 @@ def expand(string):
             if ' ## ' in partial_string:
                 partial_string = partial_string[:partial_string.index(' ## ')]
             if ' |' in partial_string:
-                ext = False
                 allpart = []
                 for part in m.group(0).split(' |'):
                     if (lm := re.match(r'(?:L|\s*_loop:\s+)(\d+) ', part)):
@@ -45,9 +50,26 @@ def expand(string):
                     else:
                         parts.append(part.strip())
                 if allpart:
-                    part = f"_loop: {loop} ;0 " + ' | '.join(allpart)
+                    parts.append(
+                            (f"_loop: {loop} ;0 " if loop is not None else "")
+                            + ' | '.join(allpart)
+                        )
+                    loop = None
             elif not m.group(1):
                 string = m.group(3)
+                if string.startswith("---"):
+                    look_for_loop = True
+                elif look_for_loop:
+                    if string.startswith("_loop: "):
+                        ext = True
+                        loop = int(string.split()[1])
+                        look_for_loop = False
+                        continue
+                    else:
+                        look_for_loop = None
+                elif look_for_loop is None:
+                    loop = 1
+
                 if string[0] in "|[" and not last_line_is_voice:
                     yield "\n---"
                 else:
@@ -113,7 +135,7 @@ def unindent_from(fileobj):
 
 
 if __name__ == '__main__':
-    for text in (
+    for i, text in enumerate((
             "name: Florian H.\n"
             "age: too old to get indentation right in the morning\n"
             "character:\n"
@@ -122,6 +144,10 @@ if __name__ == '__main__':
             "1often: yes, kind of\n"
             "1now: without a coffee, rather mad\n",
             "name: Florian H. ;0age: too old to get indentation right in the morning ;0character: ;1stressed: no ;1is_friendly: ;2often: yes, kind of ;2now: without a coffee, rather \\\\ ;2mad",
-            "name: Hey, you! |L4 one | two | three | four | _loop: 1 greeting: Bye | comment: Get out of here"
-         ):
-        for line in expand(text): print(line)
+            "name: Hey, you! |L4 one | two | three | four | _loop: 1 greeting: Bye | comment: Get out of here",
+            "---\n_loop: 3\n_meta: ababab | cdcdcd | efefef\na: ghghgh | ijijij |L1 eins | zwei"
+         )):
+        print(f"\n# ~~ item {i+1} ~~ #")
+        if False and i == 3: breakpoint()
+        for line in expand(text):
+            print(line)
