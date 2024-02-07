@@ -25,7 +25,7 @@
 <h2>Resulting audio</h2>
 
 <audio controls>
-<source src="/sompyle/result.ogg?{{ timestamp }}" type="audio/ogg" />
+<source src="/sompyle/result.mp3?{{ timestamp }}" type="audio/mp3" />
 </audio><input id="loopswitch" type="checkbox" onclick="this.previousElementSibling.loop = this.checked"><label for="loopswitch"> loop</label>
 
 <p>Please download the file if you find it worth that.</p>
@@ -71,7 +71,7 @@ function update_progress () {
          );
          if ( status["frozen"] === true ) {
              if ( "file_accomplished" in status ) {
-                 $('audio').get(0).src = '/sompyle/result.ogg?' + Date.now(); 
+                 $('audio').get(0).src = '/sompyle/result.mp3?' + Date.now(); 
                  progdiv.hide();
                  $("#progress + div").show();
              }

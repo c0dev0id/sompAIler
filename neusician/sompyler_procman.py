@@ -165,7 +165,7 @@ def delete_user_and_files(name):
     for filename in os.listdir(wdir):
         os.unlink(os.path.join(wdir, filename))
     try:
-        os.unlink(os.path.join(wdir, "..", "OUT", f"{name}.ogg"))
+        os.unlink(os.path.join(wdir, "..", "OUT", f"{name}.mp3"))
     except FileNotFoundError:
         pass
 

@@ -29,7 +29,7 @@ if [ "${USER}" != "${U}" ]; then
         rm "${T}"/*.{npy,instr} "${T}/registry" 2> /dev/null
 fi
 
-OUTFILE="${T}/../OUT/$U.ogg"
+OUTFILE="${T}/../OUT/$U.mp3"
 
 if [ "${IND-0}" -gt "${OUTD-0}" ]; then
 	# kill running process if any

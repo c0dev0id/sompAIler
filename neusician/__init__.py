@@ -254,7 +254,7 @@ def create_app(test_config=None):
 
             if status['frozen'] is True:
                 if "file_accomplished" in status:
-                    return redirect("/sompyle/result.ogg", code=303)
+                    return redirect("/sompyle/result.mp3", code=303)
                 elif "errors" in status:
                     response = make_response()
                     response.data = status["errors"] + (
@@ -379,13 +379,13 @@ def create_app(test_config=None):
             else:
                 return send_file(score_file, mimetype="text/plain")
 
-    @app.route("/sompyle/result.ogg")
+    @app.route("/sompyle/result.mp3")
     @auth.login_required
     def send_audio_generated():
         return send_file(os.path.join(
-              procman.TMPDIR, "OUT", f"{auth.current_user()}.ogg"
+              procman.TMPDIR, "OUT", f"{auth.current_user()}.mp3"
             ),
-            mimetype="audio/ogg",
+            mimetype="audio/mp3",
             max_age=0
         )
 
