@@ -30,11 +30,11 @@ def expand(string):
                 partial_string = partial_string[:partial_string.index(' ## ')]
             if ' |' in partial_string:
                 allpart = []
-                for part in m.group(0).split(' |'):
+                for part in re.split(r"\s+\|(?!\|)", m.group(0)):
                     if (lm := re.match(r'(?:L|\s*_loop:\s+)(\d+) ', part)):
                         if allpart: 
                             parts.append(
-                                    f"_loop: {loop} ;0 " + ' | '.join(allpart)
+                                    (f"_loop: {loop} ;0 " if loop is not None else "") + ' | '.join(allpart)
                                 )
                             allpart.clear()
                         loop = int(lm.group(1).strip())
@@ -88,14 +88,7 @@ def expand(string):
                     yield line(*re.match(numindent_rx, part1).groups())
                 sep = "\n---"
 
-    while len(string):
-        try:
-            current = string
-            current, string = re.split(r'\s\|\s?(?=[\|\[])', current, 1)
-        except ValueError:
-            string = ''
-        finally:
-            yield from multiline(current)
+    yield from multiline(string)
 
 
 def unindent_from(fileobj):
@@ -145,9 +138,8 @@ if __name__ == '__main__':
             "1now: without a coffee, rather mad\n",
             "name: Florian H. ;0age: too old to get indentation right in the morning ;0character: ;1stressed: no ;1is_friendly: ;2often: yes, kind of ;2now: without a coffee, rather \\\\ ;2mad",
             "name: Hey, you! |L4 one | two | three | four | _loop: 1 greeting: Bye | comment: Get out of here",
-            "---\n_loop: 3\n_meta: ababab | cdcdcd | efefef\na: ghghgh | ijijij |L1 eins | zwei"
+            "---\n_loop: 3\n_meta: ababab | cdcdcd | efefef || *\na: ghghgh | ijijij |L1 eins | zwei"
          )):
         print(f"\n# ~~ item {i+1} ~~ #")
-        if False and i == 3: breakpoint()
         for line in expand(text):
             print(line)
