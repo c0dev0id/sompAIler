@@ -24,12 +24,19 @@ def expand(string):
 
         for m in re.finditer(numindent_rx, string, re.MULTILINE):
 
+            inispace = ""
             parts = []
             partial_string = m.group(0)
             if ' ## ' in partial_string:
                 partial_string = partial_string[:partial_string.index(' ## ')]
             if ' |' in partial_string:
                 allpart = []
+                if partial_string[0].isspace():
+                    inispace = partial_string
+                    partial_string = partial_string.lstrip()
+                    inispace = inispace[: len(inispace) - len(partial_string)]
+                else:
+                    inispace = ""
                 for part in re.split(r"\s+\|(?!\|)", m.group(0)):
                     if (lm := re.match(r'(?:L|\s*_loop:\s+)(\d+) ', part)):
                         if allpart: 
@@ -45,7 +52,8 @@ def expand(string):
                             continue
                         parts.append(part)
                     elif ext:
-                        allpart.append(part.lstrip())
+                        allpart.append(inispace + part.lstrip())
+                        inispace = ""
                         continue
                     else:
                         parts.append(part.strip())
@@ -139,7 +147,7 @@ if __name__ == '__main__':
             "1now: without a coffee, rather mad\n",
             "name: Florian H. ;0age: too old to get indentation right in the morning ;0character: ;1stressed: no ;1is_friendly: ;2often: yes, kind of ;2now: without a coffee, rather \\\\ ;2mad",
             "name: Hey, you! |L4 one | two | three | four | _loop: 1 greeting: Bye | comment: Get out of here",
-            "---\n_loop: 16\nx: bla | ne\ny: blub",
+            "---\n_loop: 16\nw:\n  x: bla | ne\ny: blub",
             "---\nz: whatever",
             "---\n_loop: 3\n_meta: ababab | cdcdcd | efefef || *\na: ghghgh | ijijij |L1 eins | zwei"
          )):
