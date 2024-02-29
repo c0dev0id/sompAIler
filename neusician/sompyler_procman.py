@@ -346,3 +346,10 @@ def waiting_stats_for_user(user):
     waiting = next(c.execute("SELECT count(*) FROM waiting_users"))[0]
     workers = next(c.execute("SELECT count(*) FROM worker"))[0]
     return { 'wait_rank': wait_rank, 'waiting': waiting, 'workers': workers }
+
+def who_never_logged_in():
+    c = _get_cursor()
+    it = c.execute("SELECT name FROM user WHERE last_password_match IS NULL")
+    users = []
+    for (u,) in it: users.append(u)
+    return ", ".join(users) if users else "(none)"

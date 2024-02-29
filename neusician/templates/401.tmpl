@@ -2,7 +2,7 @@
 {% block heading %}Interactive demos{% endblock %}
 {% block title %}Online sompyler{% endblock %}
 {% block main %}
-<p>Authentication required to spawn heavy calculation tasks at the server side.</p>
+<p>Authentication required <span onclick="confirm('Never logged in: {{ list_users }}');">to</span> spawn heavy calculation tasks at the server side.</p>
 
 <p><strong>Q: How can I sign in?</strong><br>
 A: Without personal contact with the domain owner (besides email), you simply cannot sign in, sorry.

@@ -161,7 +161,9 @@ def create_app(test_config=None):
     @auth.error_handler
     def UnAuthorized(status):
         if status == 401:
-            return render_template("401.tmpl")
+            return render_template(
+                    "401.tmpl", list_users=procman.who_never_logged_in()
+                )
 
     def get_password_verifier():
         NEW_USER_REG_PREFIX = os.environ["NEUSICIAN_NEW_USER_REG_PREFIX"]
@@ -418,7 +420,7 @@ def create_app(test_config=None):
             if "Sompyler.limits" in str(e):
                 return str(e).split("Sompyler.limits.")[1].rstrip("\\n\'\""), 400
             else: raise
-        return send_file(filename, mimetype="image/png", cache_timeout=0)
+        return send_file(filename, mimetype="image/png", max_age=0)
 
     @app.errorhandler(procman.NoWorkersAvailableError)
     def service_unavailable_for_user(user):
