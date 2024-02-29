@@ -67,14 +67,15 @@ def expand(string):
                         continue
                     else:
                         look_for_loop = None
-                elif look_for_loop is None:
-                    loop = 1
 
                 if string[0] in "|[" and not last_line_is_voice:
                     yield "\n---"
                 else:
                     last_line_is_voice = bool(re.match(r"[a-zA-Z]\w+:\s*\#?", string))
                 parts = [m.group(0)]
+                if loop > 1:
+                    yield f"_loop: {loop}"
+                    loop = 1
             else:
                 parts = [m.group(0)]
             
@@ -138,8 +139,12 @@ if __name__ == '__main__':
             "1now: without a coffee, rather mad\n",
             "name: Florian H. ;0age: too old to get indentation right in the morning ;0character: ;1stressed: no ;1is_friendly: ;2often: yes, kind of ;2now: without a coffee, rather \\\\ ;2mad",
             "name: Hey, you! |L4 one | two | three | four | _loop: 1 greeting: Bye | comment: Get out of here",
+            "---\n_loop: 16\nx: bla\ny: blub",
+            "---\nz: whatever",
             "---\n_loop: 3\n_meta: ababab | cdcdcd | efefef || *\na: ghghgh | ijijij |L1 eins | zwei"
          )):
         print(f"\n# ~~ item {i+1} ~~ #")
+        # if i == 3:
+        #     breakpoint()
         for line in expand(text):
             print(line)
