@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from itertools import permutations
 from collections import Counter
 from math import factorial
 
@@ -53,6 +52,7 @@ def share(items, total, min_number=0, max_number=None):
 
     yield from _recursor()
 
+
 class RangedPermutationPicker:
 
     def __init__(self, items, total, minimum=0, maximum=None):
@@ -61,37 +61,42 @@ class RangedPermutationPicker:
         self.minimum = minimum
         self.maximum = maximum
         self.sets = []
-        permutations = 1
+        permutations = 0
         for s in share(items, total, minimum, maximum):
             s = SequencePicker(s)
-            permutations *= s.permutations
+            permutations += s.permutations
             self.sets.append(s)
         self.permutations = permutations
 
     def sequence_at_index(self, index):
-        pass
+        for s in self.sets:
+            if index < s.permutations:
+                break
+            else:
+                index -= s.permutations
+        return s.sequence_at_index(index)
 
 
 class SequencePicker():
-
     def __init__(self, orig_sequence):
         self.counter = Counter(orig_sequence)
         reps = 1
         for v in self.counter.values():
             reps *= factorial(v)
-        self.permutations = factorial(counter.total()) // reps
+        self.permutations = factorial(self.counter.total()) // reps
 
     def sequence_at_index(self, index):
         counter = self.counter.copy()
         sequence = []
-        while index:
+        last_element = None
+        while counter:
             minuend = 0
             for element, count in counter.items():
                 if count == 0:
                     continue
                 counter[element] -= 1
                 reps = 1
-                for v in self.counter.values():
+                for v in counter.values():
                     reps *= factorial(v)
                 permutations = factorial(counter.total()) // reps
                 counter[element] += 1
@@ -99,14 +104,23 @@ class SequencePicker():
                     break
                 else:
                     minuend = permutations
-            if minuend = 0:
-                break
+                last_element = element
             index -= minuend
             counter[element] -= 1
-            sequence.append(last_element)
+            if counter[element] == 0:
+                del counter[element]
+            sequence.append(element)
+            last_element = None
         return tuple(sequence)
 
+
 if __name__ == '__main__':
+    rpp = RangedPermutationPicker(5, 25, 1)
+    for i in range(0,51):
+        print(str(i), rpp.sequence_at_index(i))
+        # if i == 5: breakpoint()
+    exit()
+    from itertools import permutations
     import sys
     for x in share(*[int(x) for x in sys.argv[1:5]]):
         seen = set()
