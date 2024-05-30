@@ -68,12 +68,19 @@ class RangedPermutationPicker:
             self.sets.append(s)
         self.permutations = permutations
 
-    def sequence_at_index(self, index):
+    def sequence_at_index(self, index_position):
+        index = index_position
         for s in self.sets:
             if index < s.permutations:
                 break
             else:
                 index -= s.permutations
+        else:
+            raise ValueError(
+                    f"There is no permutated sequence #{index_position}, "
+                    f"with the arguments passed only {self.permutations} "
+                    "are available"
+                )
         return s.sequence_at_index(index)
 
 
@@ -100,10 +107,10 @@ class SequencePicker():
                     reps *= factorial(v)
                 permutations = factorial(counter.total()) // reps
                 counter[element] += 1
-                if index < permutations:
+                if index < permutations + minuend:
                     break
                 else:
-                    minuend = permutations
+                    minuend += permutations
                 last_element = element
             index -= minuend
             counter[element] -= 1
@@ -115,14 +122,16 @@ class SequencePicker():
 
 
 if __name__ == '__main__':
-    rpp = RangedPermutationPicker(5, 25, 1)
-    for i in range(0,51):
-        print(str(i), rpp.sequence_at_index(i))
-        # if i == 5: breakpoint()
-    exit()
-    from itertools import permutations
     import sys
-    for x in share(*[int(x) for x in sys.argv[1:5]]):
+    args = [int(x) for x in sys.argv[1:6]]
+    rpp = RangedPermutationPicker(*args[0:4])
+    print(
+        f"At the index #{args[4]} you will find sequence: ",
+        rpp.sequence_at_index(args[4])
+    )
+    from itertools import permutations
+    i = 0
+    for x in share(*args[0:4]):
         seen = set()
         counter = Counter((i for i in x))
         reps = 1
@@ -134,6 +143,6 @@ if __name__ == '__main__':
               ) 
         for p in permutations(x):
             seen.add(p)
-        for i, p in enumerate(sorted(seen)):
-            print(f"{i+1}.", " ".join(str(i) for i in p))
-
+        for p in sorted(seen):
+            print(f"{i}.", " ".join(str(i) for i in p))
+            i += 1
