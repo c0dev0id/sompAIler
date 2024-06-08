@@ -95,7 +95,6 @@ class SequencePicker():
     def sequence_at_index(self, index):
         counter = self.counter.copy()
         sequence = []
-        last_element = None
         while counter:
             minuend = 0
             for element, count in counter.items():
@@ -111,13 +110,11 @@ class SequencePicker():
                     break
                 else:
                     minuend += permutations
-                last_element = element
             index -= minuend
             counter[element] -= 1
             if counter[element] == 0:
                 del counter[element]
             sequence.append(element)
-            last_element = None
         return tuple(sequence)
 
 

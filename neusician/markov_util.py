@@ -3,7 +3,12 @@ import re
 class MarkovSpecError(RuntimeError):
     pass
 
-def markov_sensible_tone_getter(model):
+def markov_sensible_tone_getter(model, bignum_getter=None):
+    """ if bignum_getter is passed, markov_sensible_tone_getter
+        is an iterator. Otherwise, as a generator it must be sent
+        the big number and yields the reduced big_number as
+        the first item, the tone as the second item of a tuple.
+    """
 
     mel_interv, *nets = re.split(r"(?<=\d)\.(?![-\d])", model)
     mel_interv = [ int(i) for i in mel_interv.split(".") ]
@@ -69,7 +74,8 @@ def markov_sensible_tone_getter(model):
 
     def advancer():
 
-        big_number = yield
+        if bignum_getter is None:
+            big_number = yield
 
         while True:
             for l in range(max_pathlen):
@@ -83,12 +89,18 @@ def markov_sensible_tone_getter(model):
                 except KeyError:
                     continue
                 else:
-                    big_number, remainder = divmod(big_number, sum(probs))
+                    if bignum_getter is None:
+                        big_number, remainder = divmod(big_number, sum(probs))
+                    else:
+                        remainder = bignum_getter.send(sum(probs))
                     pos = -1
                     while remainder > 0:
                         pos += 1
                         remainder -= probs[pos]
-                    big_number = yield big_number, cursor(mel_interv[pos])
+                    if bignum_getter is None:
+                        big_number = yield big_number, cursor(mel_interv[pos])
+                    else:
+                        yield cursor(mel_interv[pos])
                     break
 
     return lenbased_probs_intervals, advancer()
