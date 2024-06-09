@@ -188,7 +188,7 @@ def get_both(melody, rhythm, offset, span, articles='o', modifiers=None):
         quantify(pause, ".") + articles[ i % len(articles) ]
         + quantify(tone) + quantify(length-1, '_')
           for i, (pause, tone, length) in enumerate(aggregation)
-    )
+    ) + quantify(pause, '.')
         
 
 
@@ -279,14 +279,17 @@ def rhythm_cycler(
             total = data[0]
         else:
             save_target[1][0] = total
+            overwrote_sth = True
         if minimum_length is None:
             minimum_length = data[1]
         else:
             save_target[1][1] = minimum_length
+            overwrote_sth = True
         if maximum_length is None:
             maximum_length = data[2]
         else:
             save_target[1][2] = maximum_length
+            overwrote_sth = True
     else:
         overwrote_sth = True
 
