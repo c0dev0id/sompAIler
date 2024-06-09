@@ -406,7 +406,7 @@ def create_app(test_config=None):
     @auth.login_required
     def sound_of_tone(number):
         filename = procman.analyze_tone(auth.current_user(), number, "sound")
-        return send_file(filename, mimetype="audio/ogg", cache_timeout=0)
+        return send_file(filename, mimetype="audio/ogg", max_age=0)
 
     @app.route("/sompyle/analyze/tone-<int:number>/outline")
     @auth.login_required
