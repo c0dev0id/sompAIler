@@ -1,8 +1,5 @@
 import os, sys, stat, subprocess, json, re
 from . import sompyler_procman as procman
-from .arbitextonotes import tones
-from .arbitrarygrooves import preprocess as ag_preprocess
-from .smart_indent import expand as indenter, unindent_from as unindenter
 from datetime import datetime
 from random import Random
 
@@ -446,6 +443,9 @@ def create_app(test_config=None):
 
 if 'uwsgi' in sys.modules:
     from .sompyler_yaml import make_yaml_code, code_analyzer
+    from .arbitextonotes import tones
+    from .arbitrarygrooves import preprocess as ag_preprocess
+    from .smart_indent import expand as indenter, unindent_from as unindenter
     from .markov_util import MarkovSpecError
     from flask import (
             Flask, render_template, request, jsonify, make_response, redirect,
