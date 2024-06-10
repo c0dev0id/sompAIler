@@ -64,7 +64,10 @@ def create_app(test_config=None):
         limits[2] = ''
         procman.SOMPYLER_LIMITS = ":".join(limits)
         del limits
-    procman.init_db(app.config["DATABASE"])
+
+    @app.before_request
+    def init_db():
+        procman.init_db(app.config["DATABASE"])
 
     @app.route('/', endpoint="index")
     def hello():
@@ -441,7 +444,7 @@ def create_app(test_config=None):
 
     return app
 
-if 'uwsgi' in sys.modules:
+if {'uwsgi', 'flask.cli'} & sys.modules.keys():
     from .sompyler_yaml import make_yaml_code, code_analyzer
     from .arbitextonotes import tones
     from .arbitrarygrooves import preprocess as ag_preprocess
