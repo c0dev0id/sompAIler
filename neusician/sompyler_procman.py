@@ -52,14 +52,14 @@ def init_db(path):
     con_path = path
 
     if os.path.getsize(path):
-        print("Just establishing connection with "
-             f"initialized database {path}."
-            )
         con = sqlite3.connect(path)
         con.execute("PRAGMA FOREIGN_KEYS=ON")
         return
-    else:
-        con = sqlite3.connect(path)
+
+    print("Initializing fresh database "
+         f"at path {path}."
+        )
+    con = sqlite3.connect(path)
 
     c = con.cursor()
     c.executescript(open(os.path.join(SUBDIR, "schema.sql")).read())

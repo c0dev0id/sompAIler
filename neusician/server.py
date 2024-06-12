@@ -2,6 +2,17 @@ import os, sys, stat, subprocess, json, re
 from . import sompyler_procman as procman
 from datetime import datetime
 from random import Random
+from .sompyler_yaml import make_yaml_code, code_analyzer
+from .arbitextonotes import tones
+from .arbitrarygrooves import preprocess as ag_preprocess
+from .smart_indent import expand as indenter, unindent_from as unindenter
+from .markov_util import MarkovSpecError
+from flask import (
+        Flask, render_template, request, jsonify, make_response, redirect,
+        send_file, url_for
+    )
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
 
 import subprocess
 
@@ -18,8 +29,6 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'neusician.db'),
-        SERVER_NAME="demo.neusik.de",
-        PREFERRED_URL_SCHEME="https",
     )
 
     auth = HTTPBasicAuth(realm="Even more private an area")
@@ -443,17 +452,3 @@ def create_app(test_config=None):
         procman.close_connection()
 
     return app
-
-if {'uwsgi', 'flask.cli'} & sys.modules.keys():
-    from .sompyler_yaml import make_yaml_code, code_analyzer
-    from .arbitextonotes import tones
-    from .arbitrarygrooves import preprocess as ag_preprocess
-    from .smart_indent import expand as indenter, unindent_from as unindenter
-    from .markov_util import MarkovSpecError
-    from flask import (
-            Flask, render_template, request, jsonify, make_response, redirect,
-            send_file, url_for
-        )
-    from flask_httpauth import HTTPBasicAuth
-    from werkzeug.security import generate_password_hash, check_password_hash
-    app = create_app()
