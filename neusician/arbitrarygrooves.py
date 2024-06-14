@@ -4,6 +4,13 @@ from .arbitextonotes import seedphrase_to_bigint
 from .markov_util import markov_sensible_tone_getter
 from .ranged_permutation_picker import RangedPermutationPicker
 
+last_lines = []
+TAIL_LENGTH = 10
+
+class ScorandomizationError(ValueError):
+    def tail_log(self):
+        return "[...]\n" + "".join(last_lines)
+
 def randomint_getter(big_number):
 
     reduced = 0
@@ -206,9 +213,18 @@ def melody_cycler(
     ):
 
     if isinstance(items_or_reference, str) and items_or_reference.startswith('?'):
-        memory[0]['_last_melody'] = saved = memory[0][items_or_reference]
+        try:
+            mel_pattern_name = items_or_reference[1:]
+            memory[0]['_last_melody'] = saved = memory[0][mel_pattern_name]
+        except KeyError:
+            del memory[0]['_last_melody']
+            list_of_names = ", ".join(memory[0])
+            raise ScorandomizationError(
+                    f'Melody pattern of name {mel_pattern_name} not found in '
+                    f'available {list_of_names}.'
+                )
     else:
-        length = items_or_reference
+        length = int(items_or_reference)
         saved = memory[0]['_last_melody']
 
     if save is not None:
@@ -262,9 +278,18 @@ def rhythm_cycler(
     ):
 
     if isinstance(items_or_reference, str) and items_or_reference.startswith('?'):
-        memory[0]['_last_rhythm'] = saved = memory[1][items_or_reference]
+        try:
+            rh_pattern_name = items_or_reference[1:]
+            memory[0]['_last_rhythm'] = saved = memory[1][rh_pattern_name]
+        except KeyError:
+            del memory[1]['_last_rhythm']
+            list_of_names = ", ".join(memory[1]) or "(none)"
+            raise ScorandomizationError(
+                    f'Rhythm pattern of name "{rh_pattern_name}" not found in '
+                    f'available {list_of_names}.'
+                )
     else:
-        items = items_or_reference
+        items = int(items_or_reference)
         saved = memory[1]['_last_rhythm']
 
     if save is not None:
@@ -358,6 +383,10 @@ allowed = {
 }
 def expand_line(s):
 
+    last_lines.append(s)
+    if len(last_lines) > TAIL_LENGTH:
+        last_lines.pop(0)
+
     def _resolver(m):
         d = m.groupdict()
         if d['mel'] is not None:
@@ -369,9 +398,9 @@ def expand_line(s):
         elif d['func'] is None:
             d['func'] = 'vl'
 
-        d['args'] = re.sub(r"^(?![\"']|-?\d+,)([^,]+)", '"\1"', d['args'])
-        d['args'] = re.sub(r">([a-z]\w*)", ', save="\1"', d['args'])
-        d['args'] = re.sub(r"([+-]\d+)$",  ', rotate=\1', d['args'])
+        d['args'] = re.sub(r"^(?![\"']|-?\d+,)([^,]+)", r'"\1"', d['args'])
+        d['args'] = re.sub(r">([a-z]\w*)", r', save="\1"', d['args'])
+        d['args'] = re.sub(r"([+-]\d+)$",  r', rotate=\1', d['args'])
         if d['chained'] is None:
             d['chained'] = {}
         else:
@@ -389,13 +418,20 @@ def expand_line(s):
         if d['before'] == '<':
             d['before'] = ''
 
-        return d['before'] + eval(
+        try:
+          return d['before'] + eval(
             '{func}({args}{chained})'.format(**d), allowed
-        )
+          )
+        except NameError as e:
+            raise ScorandomizationError(f'No function {e.args}')
+        except TypeError as e:
+            raise ScorandomizationError(str(e))
 
     # re.sub(r"(?P<before>(?:[^\s#]\s*-|[^-,:{\[]) \s*)", _resolver, s, re.X)
     return re.sub(r"""
-      (?P<before>(?:\s(?=\?\w)|[^\s#]\s*-|[^-,:{\[\s]) \s*)
+      (?P<before>(?: \s (?=\?\w) | [^\s#]\s*- | [^-,:{\[\s] )
+                 (?: \B\s* | \s+ ) # space optional if non-word character preceeds
+      )
       (?:
          (?: \?(?P<func>\w+))?
          \( (?(func)|(?=\d+,)) (?P<args>[^;)]+) \)
@@ -404,7 +440,7 @@ def expand_line(s):
       )
       (?<=[)}\]])
       (?: (?P<chained>(?<=\})> (?=<\[))
-        | (?::(?P<modifier>\D[^:]+))?
+        | (?::(?P<modifiers>\D[^:]+))?
           (?::(?P<start>\d+))?
           (?:\+(?P<span>\d+))?
       )
@@ -462,7 +498,10 @@ if __name__ == '__main__':
         textfile_out = argv[2]
         textoutp = open(textfile_out, 'w')
     
-    for line in preprocess():
-        print(line, end='', file=textoutp)
+    try:
+        for line in preprocess():
+            print(line, end='', file=textoutp)
+    except ScorandomizationError as e:
+        print(str(e), "– Lines recently processed:\n", e.tail_log(), end="")
 
     exit()

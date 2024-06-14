@@ -4,7 +4,7 @@ from datetime import datetime
 from random import Random
 from .sompyler_yaml import make_yaml_code, code_analyzer
 from .arbitextonotes import tones
-from .arbitrarygrooves import preprocess as ag_preprocess
+from .arbitrarygrooves import preprocess as ag_preprocess, ScorandomizationError
 from .smart_indent import expand as indenter, unindent_from as unindenter
 from .markov_util import MarkovSpecError
 from flask import (
@@ -432,7 +432,7 @@ def create_app(test_config=None):
         return send_file(filename, mimetype="image/png", max_age=0)
 
     @app.errorhandler(procman.NoWorkersAvailableError)
-    def service_unavailable_for_user(user):
+    def service_unavailable_for_user(exception):
 
         stats = {
             'workers': 3,
@@ -446,6 +446,14 @@ def create_app(test_config=None):
             "service-unavailable.tmpl",
             **stats
         ), 503
+
+    @app.errorhandler(ScorandomizationError)
+    def preprocessor_error(exception):
+        return render_template(
+            "preprocessor-failed.tmpl",
+            msg=str(exception),
+            last_lines=exception.tail_log()
+        ), 400
 
     @app.teardown_appcontext
     def close_connection(exception):
