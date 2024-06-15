@@ -26,7 +26,7 @@ class ScoreInputError(ValueError):
                      and last_lines.unpacked[-1] != last_lines.preprocessed[-1]
                   else "")
                + "[...]\n"
-               + "".join(getattr(last_lines, slot))
+               + "\n".join(getattr(last_lines, slot))
         )
 
 class ScorePreprocessingError(ScoreInputError):
