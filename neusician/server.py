@@ -66,6 +66,7 @@ def create_app(test_config=None):
         pass
 
     procman.TMPDIR = app.config["TMPDIR"]
+    procman.SOMPYLER = app.config["SOMPYLER"]
     limits = app.config.get("SOMPYLER_LIMITS")
 
     if limits:

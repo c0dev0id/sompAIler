@@ -7,6 +7,7 @@ con = None
 con_path = None
 
 STD_RESOURCES = 10**9
+SOMPYLER = None
 SOMPYLER_LIMITS = None
 SUBDIR="neusician"
 TMPDIR=os.environ.get("TMPDIR", "/tmp")
@@ -205,14 +206,15 @@ def get_status(user, w0mode='ff', tail_log=False, quota=100):
 
     my_env = os.environ.copy()
     my_env["SOMPYLER_LIMITS"] = sompyler_limits
+    my_env["SKIP_KNOWN_LINES"] = str(1 if tail_log else '')
+    my_env["SOMPYLER"] = SOMPYLER
+
     if w0mode is not None:
         my_env["W0MODE"] = w0mode
     else:
         raise RuntimeError("no w0mode")
 
     wdir = worker_directory_of_user(user)
-
-    my_env["SKIP_KNOWN_LINES"] = str(1 if tail_log else '')
 
     try:
         res = subprocess.run(
