@@ -1,4 +1,5 @@
 import re, io
+from .input_error import last_lines, ScorePreprocessingError
 
 def expand(string):
 
@@ -97,7 +98,10 @@ def expand(string):
                     yield line(*re.match(numindent_rx, part1).groups())
                 sep = "\n---"
 
-    yield from multiline(string)
+    try:
+        yield from multiline(string)
+    except RuntimeError as e:
+        raise ScorePreprocessingError from e
 
 
 def unindent_from(fileobj):
@@ -151,8 +155,8 @@ if __name__ == '__main__':
             "---\nz: whatever",
             "---\n_loop: 3\n_meta: ababab | cdcdcd | efefef || *\na: ghghgh | ijijij |L1 eins | zwei"
          )):
+        last_lines.orig_line(text)
         print(f"\n# ~~ item {i+1} ~~ #")
         # if i == 3:
         #     breakpoint()
-        for line in expand(text):
-            print(line)
+        for line in expand(text): print(line)

@@ -1,15 +1,9 @@
 import re
 from sys import stdin as textinp, stdout as textoutp, argv
+from .input_error import last_lines, ScorePreprocessingError
 from .arbitextonotes import seedphrase_to_bigint
 from .markov_util import markov_sensible_tone_getter
 from .ranged_permutation_picker import RangedPermutationPicker
-
-last_lines = []
-TAIL_LENGTH = 10
-
-class ScorandomizationError(ValueError):
-    def tail_log(self):
-        return "[...]\n" + "".join(last_lines)
 
 def randomint_getter(big_number):
 
@@ -219,7 +213,7 @@ def melody_cycler(
         except KeyError:
             del memory[0]['_last_melody']
             list_of_names = ", ".join(memory[0])
-            raise ScorandomizationError(
+            raise ScorePreprocessingError(
                     f'Melody pattern of name {mel_pattern_name} not found in '
                     f'available {list_of_names}.'
                 )
@@ -284,7 +278,7 @@ def rhythm_cycler(
         except KeyError:
             del memory[1]['_last_rhythm']
             list_of_names = ", ".join(memory[1]) or "(none)"
-            raise ScorandomizationError(
+            raise ScorePreprocessingError(
                     f'Rhythm pattern of name "{rh_pattern_name}" not found in '
                     f'available {list_of_names}.'
                 )
@@ -383,9 +377,7 @@ allowed = {
 }
 def expand_line(s):
 
-    last_lines.append(s)
-    if len(last_lines) > TAIL_LENGTH:
-        last_lines.pop(0)
+    last_lines.unpacked_line(s)
 
     def _resolver(m):
         d = m.groupdict()
@@ -423,9 +415,9 @@ def expand_line(s):
             '{func}({args}{chained})'.format(**d), allowed
           )
         except NameError as e:
-            raise ScorandomizationError(f'No function {e.args}')
+            raise ScorePreprocessingError(f'No score snippet preprocessing filter {e.name}')
         except TypeError as e:
-            raise ScorandomizationError(str(e))
+            raise ScorePreprocessingError(str(e))
 
     # re.sub(r"(?P<before>(?:[^\s#]\s*-|[^-,:{\[]) \s*)", _resolver, s, re.X)
     return re.sub(r"""
@@ -501,7 +493,7 @@ if __name__ == '__main__':
     try:
         for line in preprocess():
             print(line, end='', file=textoutp)
-    except ScorandomizationError as e:
+    except ScorePreprocessingError as e:
         print(str(e), "– Lines recently processed:\n", e.tail_log(), end="")
 
     exit()

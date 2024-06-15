@@ -2,9 +2,10 @@ import os, sys, stat, subprocess, json, re
 from . import sompyler_procman as procman
 from datetime import datetime
 from random import Random
+from .input_error import ScoreInputError
 from .sompyler_yaml import make_yaml_code, code_analyzer
 from .arbitextonotes import tones
-from .arbitrarygrooves import preprocess as ag_preprocess, ScorandomizationError
+from .arbitrarygrooves import preprocess as ag_preprocess
 from .smart_indent import expand as indenter, unindent_from as unindenter
 from .markov_util import MarkovSpecError
 from flask import (
@@ -33,10 +34,6 @@ def create_app(test_config=None):
 
     auth = HTTPBasicAuth(realm="Even more private an area")
 
-    print("NEUSICIAN_NEW_USER_REG_PREFIX="
-        + os.environ['NEUSICIAN_NEW_USER_REG_PREFIX'],
-        file=sys.stderr)
-
     def int_wo_unit(number): # integer with/without (w/o) units resolved
         # copied from Sompyler
         units = {'K': 3, 'M': 6, 'G': 9, 'T': 12}
@@ -57,6 +54,10 @@ def create_app(test_config=None):
     else:
         # load the test config if passed in
         app.config.from_mapping(test_config)
+
+    print("NEUSICIAN_NEW_USER_REG_PREFIX="
+        + app.config['NEUSICIAN_NEW_USER_REG_PREFIX'],
+        file=sys.stderr)
 
     # ensure the instance folder exists
     try:
@@ -175,7 +176,7 @@ def create_app(test_config=None):
                 )
 
     def get_password_verifier():
-        NEW_USER_REG_PREFIX = os.environ["NEUSICIAN_NEW_USER_REG_PREFIX"]
+        NEW_USER_REG_PREFIX = app.config["NEUSICIAN_NEW_USER_REG_PREFIX"]
         def _v(username, password):
             if password.startswith(NEW_USER_REG_PREFIX):
                 password = password[ len(NEW_USER_REG_PREFIX) : ]
@@ -233,7 +234,7 @@ def create_app(test_config=None):
     @app.route('/sompyle', methods=('GET','POST'), endpoint='public-yaml-acceptor')
     def yaml_textarea():
         def _file_it():
-            file_list = open(os.path.join(os.environ["SOMPYLER"], "introspectables.txt"))
+            file_list = open(os.path.join(app.config["SOMPYLER"], "introspectables.txt"))
             for line in file_list:
                 yield line.rstrip()
 
@@ -315,7 +316,7 @@ def create_app(test_config=None):
                 and "../" not in ifile
                 ):
             return "This file is not listed, is it? So it probably does neither exist nor is of your business. ;)", 404
-        ifile = os.path.join(os.environ["SOMPYLER"], idir, ifile)
+        ifile = os.path.join(app.config["SOMPYLER"], idir, ifile)
         try:
             return send_file(ifile, mimetype="text/plain")
         except FileNotFoundError:
@@ -447,7 +448,7 @@ def create_app(test_config=None):
             **stats
         ), 503
 
-    @app.errorhandler(ScorandomizationError)
+    @app.errorhandler(ScoreInputError)
     def preprocessor_error(exception):
         return render_template(
             "preprocessor-failed.tmpl",
