@@ -426,9 +426,9 @@ def expand_line(s):
       )
       (?:
          (?: \?(?P<func>\w+))?
-         \( (?(func)|(?=\d+,)) (?P<args>[^;)]+) \)
-       | \[ (?P<mel>[^;\]]+) \]
-       | \{ (?P<rh>[^;}]+)  \}
+         \( (?(func)|(?=\d+,|['"?])) (?P<args>[^;)]+) \)
+       | \[          (?=\d+,|['"?])  (?P<mel>[^;\]]+) \]
+       | \{          (?=\d+,|['"?])  (?P<rh>[^;}]+)   \}
       )
       (?<=[)}\]])
       (?: (?P<chained>(?<=\})> (?=<\[))
@@ -494,6 +494,6 @@ if __name__ == '__main__':
         for line in preprocess():
             print(line, end='', file=textoutp)
     except ScorePreprocessingError as e:
-        print(str(e), "– Lines recently processed:\n", e.tail_log(), end="")
+        print(str(e), "– Last lines processed:\n", e.tail_log(), end="")
 
     exit()
