@@ -104,6 +104,33 @@ def expand(string):
         raise ScorePreprocessingError from e
 
 
+def unpack_measure(string):
+
+    def splitter(part):
+        head, *ext = re.split(r" ; (\d\S*(?<=\d)|[a-z]\w*)(?=: )", part)
+
+        if ext:
+            formatted = []
+            while ext:
+                key, value, *ext = ext
+                formatted.append("  - " + key + value + "\n")
+            return "\n  - " + head + "\n" + "".join(formatted)
+
+        else:
+            return head
+
+    def meta_splicer(part):
+        segments = re.split(r"(?<=\})\s([\{\w])", part, 1)
+        if len(segments) == 1:
+            return None, None, segments
+        elif segments[1] == '{':
+            meta = segments[0]
+            articles, remainder = re.split(r"(?<=\})\s(?![^,}\]])", segments[-1], 1)
+            return meta, articles, remainder
+        else:
+            return segments[0], None, segments[1]+segments[2] 
+
+
 def unindent_from(fileobj):
     out = io.StringIO()
     current_indent = []
