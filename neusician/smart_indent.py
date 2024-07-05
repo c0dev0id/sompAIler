@@ -1,19 +1,9 @@
 import re, io
 from .input_error import last_lines, ScorePreprocessingError
 
+numindent_rx = r"^(\d+(?!\d*:))?([ \t]*)(.+)"
+
 def expand(string):
-
-    basic_indent = ''
-
-    numindent_rx = r"^(\d+(?!\d*:))?([ \t]*)(.+)"
-
-    def line(added_indents, space, content):
-        nonlocal basic_indent
-        if added_indents:
-            indent = basic_indent + '  ' * int(added_indents)
-        else:
-            indent = basic_indent = space
-        return indent + content.rstrip()
 
     look_for_loop = False
     ext = False
@@ -91,11 +81,7 @@ def expand(string):
             sep = ""
             for part1 in parts:
                 if sep: yield sep
-                if re.search(r' ;\d', part1):
-                    for part in re.split(r"(?<!(?<!\\)\\) ;(?=\d)", part1):
-                        yield line(*re.match(numindent_rx, part).groups())
-                else:
-                    yield line(*re.match(numindent_rx, part1).groups())
+                yield from unpack_measure(part1)
                 sep = "\n---"
 
     try:
@@ -106,6 +92,40 @@ def expand(string):
 
 def unpack_measure(string):
 
+    last_pos = 0
+
+    def quote_nonnums(string):
+
+        if "|" in string:
+            return '"' + " | ".join(string.split("|")) + '"'
+
+        if not re.fullmatch(r"[+-]?\d*\.?\d+([eE][+-]?\d+)?", string):
+            string = '"' + string + '"'
+
+        return string
+
+    abbrevs = {
+            "sp": "stress_pattern",
+            "bpm": "beats_per_minute",
+            "lsb": "lower_stress_bound",
+            "usb": "upper_stress_bound",
+            "ets": "elasticks_shape",
+            "etp": "elasticks_pattern",
+        }
+    def expand_abbrevs(match):
+
+        # occurrences must be adjacent from the beginning
+        # otherwise simply return matched substring
+        if match.start() > last_pos:
+            return match.group(0)
+        else: last_pos = match.end()
+
+        return abbrevs[ match.group("key") ] + ": " + (
+                quote_nonnums(match.group("value")) + (
+                    ", " if match.group("sep") else ""
+                )
+            )
+
     def splitter(part):
         head, *ext = re.split(r" ; (\d\S*(?<=\d)|[a-z]\w*)(?=: )", part)
 
@@ -113,11 +133,11 @@ def unpack_measure(string):
             formatted = []
             while ext:
                 key, value, *ext = ext
-                formatted.append("  - " + key + value + "\n")
-            return "\n  - " + head + "\n" + "".join(formatted)
+                formatted.append(f"{key}: {value}\n")
+            return (head, *formatted)
 
         else:
-            return head
+            return (head,)
 
     def meta_splicer(part):
         segments = re.split(r"(?<=\})\s([\{\w])", part, 1)
@@ -126,9 +146,58 @@ def unpack_measure(string):
         elif segments[1] == '{':
             meta = segments[0]
             articles, remainder = re.split(r"(?<=\})\s(?![^,}\]])", segments[-1], 1)
-            return meta, articles, remainder
+            # return meta, articles, remainder
         else:
-            return segments[0], None, segments[1]+segments[2] 
+            meta = segments[0]
+            articles = ''
+            remainder = segments[1]+segments[2] 
+
+        header = {}
+        if meta:
+            meta = "{ " + re.sub(
+                    r"(?P<key>[a-z]+):(?P<value>\d\S*?)(?P<sep>(?<=\d);(?=\D)|$)",
+                    expand_abbrevs,
+                    meta[1:-1]
+                ) + " }"
+            header['_meta'] = yaml.load_safe(meta)
+        if articles:
+            header['_articles'] = yaml.load_safe(articles)
+
+        return header, remainder
+
+    basic_indent = ''
+    def _line(added_indents, space, content):
+        nonlocal basic_indent
+        if added_indents:
+            indent = basic_indent + '  ' * int(added_indents)
+        else:
+            indent = basic_indent = space
+        return indent + content.rstrip()
+
+    def singline(string):
+      if re.search(r' ;\d', string):
+          for part in re.split(r"(?<!(?<!\\)\\) ;(?=\d)", string):
+              yield _line(*re.match(numindent_rx, part).groups())
+      else:
+          yield _line(*re.match(numindent_rx, string).groups())
+
+    header, string = meta_splicer(string)
+    string_starts_with_key = re.match(r"\w+: ", string)
+
+    if header:
+        yield yaml.dump(header)
+
+    if string_starts_with_key:
+        if " / " in string:
+            unpacked = []
+            for vb in string.split(" / "):
+                m = re.match(r"\w+:(?=\s)", vb)
+                unpacked.append(m.group(0) + "\n")
+                unpacked.extend(map(meta_splicer, splitter(vb[m.end():])))
+            string = "  ".join(unpacked)
+        yield from singline(string)
+    else:
+        yield from singline(("0: " if header else "") + string)
 
 
 def unindent_from(fileobj):
