@@ -1,7 +1,25 @@
 import re, io
+import yaml
 from .input_error import last_lines, ScorePreprocessingError
 
 numindent_rx = r"^(\d+(?!\d*:))?([ \t]*)(.+)"
+
+def singline(string, ini_indent=0):
+    basic_indent = '  ' * ini_indent
+    def _line(added_indents, space, content):
+        nonlocal basic_indent
+        if added_indents:
+            indent = basic_indent + '  ' * int(added_indents)
+        else:
+            indent = basic_indent = '  ' * ini_indent + space
+        return indent + content.rstrip()
+
+    if re.search(r' ;\d', string):
+        for part in re.split(r"(?<!(?<!\\)\\) ;(?=\d)", string):
+            yield _line(*re.match(numindent_rx, part).groups())
+    else:
+        yield _line(*re.match(numindent_rx, string).groups())
+
 
 def expand(string):
 
@@ -28,7 +46,16 @@ def expand(string):
                     inispace = inispace[: len(inispace) - len(partial_string)]
                 else:
                     inispace = ""
-                for part in re.split(r"\s+\|(?!\|)", m.group(0)):
+                line_split = re.split(r"\s+\|(?!\|)", m.group(0))
+
+                if line_split[0].startswith('|'):
+                    line_split[0] = line_split[0][1:]
+                else:
+                    preamble = line_split.pop(0)
+                    yield from singline(preamble)
+                    yield "\n---"
+
+                for part in line_split:
                     if (lm := re.match(r'(?:L|\s*_loop:\s+)(\d+) ', part)):
                         if allpart: 
                             parts.append(
@@ -113,7 +140,7 @@ def unpack_measure(string):
             "etp": "elasticks_pattern",
         }
     def expand_abbrevs(match):
-
+        nonlocal last_pos
         # occurrences must be adjacent from the beginning
         # otherwise simply return matched substring
         if match.start() > last_pos:
@@ -126,8 +153,12 @@ def unpack_measure(string):
                 )
             )
 
+    offset_rx = r"(\d\S*(?<=\d)|[a-z]\w*):"
     def splitter(part):
-        head, *ext = re.split(r" ; (\d\S*(?<=\d)|[a-z]\w*)(?=: )", part)
+        head, *ext = re.split(r" ; " + offset_rx, part)
+
+        if not re.match(offset_rx, part):
+            head = "0: " + head
 
         if ext:
             formatted = []
@@ -140,9 +171,9 @@ def unpack_measure(string):
             return (head,)
 
     def meta_splicer(part):
-        segments = re.split(r"(?<=\})\s([\{\w])", part, 1)
+        segments = re.split(r"(?<=\])\s([\{\w])", part, 1)
         if len(segments) == 1:
-            return None, None, segments
+            return {}, segments[0]
         elif segments[1] == '{':
             meta = segments[0]
             articles, remainder = re.split(r"(?<=\})\s(?![^,}\]])", segments[-1], 1)
@@ -157,45 +188,42 @@ def unpack_measure(string):
             meta = "{ " + re.sub(
                     r"(?P<key>[a-z]+):(?P<value>\d\S*?)(?P<sep>(?<=\d);(?=\D)|$)",
                     expand_abbrevs,
-                    meta[1:-1]
+                    meta.strip()[1:-1]
                 ) + " }"
-            header['_meta'] = yaml.load_safe(meta)
+            header['_meta'] = yaml.safe_load(meta)
         if articles:
-            header['_articles'] = yaml.load_safe(articles)
+            header['_articles'] = yaml.safe_load(articles)
 
         return header, remainder
 
-    basic_indent = ''
-    def _line(added_indents, space, content):
-        nonlocal basic_indent
-        if added_indents:
-            indent = basic_indent + '  ' * int(added_indents)
-        else:
-            indent = basic_indent = space
-        return indent + content.rstrip()
+    first_string, *voice_strings = string.split(" / ")
+    if (m := re.match(r"((^| ;0\s*)_\w+: +[^\[\{]+?)+( ;0\s*)", first_string)):
+        first_string = first_string[m.end():]
+        yield from singline(m.group(0).rsplit(" ;0", 1)[0])
+    if not re.match(r"\w+: ", first_string):
+        header, first_string = meta_splicer(first_string)
+        if header: yield yaml.dump(header).rstrip()
+    voice_strings.insert(0, first_string)
 
-    def singline(string):
-      if re.search(r' ;\d', string):
-          for part in re.split(r"(?<!(?<!\\)\\) ;(?=\d)", string):
-              yield _line(*re.match(numindent_rx, part).groups())
-      else:
-          yield _line(*re.match(numindent_rx, string).groups())
-
-    header, string = meta_splicer(string)
-    string_starts_with_key = re.match(r"\w+: ", string)
-
-    if header:
-        yield yaml.dump(header)
-
-    if string_starts_with_key:
-        if " / " in string:
-            unpacked = []
-            for vb in string.split(" / "):
-                m = re.match(r"\w+:(?=\s)", vb)
-                unpacked.append(m.group(0) + "\n")
-                unpacked.extend(map(meta_splicer, splitter(vb[m.end():])))
-            string = "  ".join(unpacked)
-        yield from singline(string)
+    if re.match(r"\w+: ", first_string):
+        unpacked = []
+        for vb in voice_strings:
+            ini_per_voice, *remainder_per_voice = splitter(vb)
+            m = re.match(r"(\w+:)( ;0)?\s*", ini_per_voice)
+            ini_per_voice = ini_per_voice[m.end():]
+            voice_header, ini_per_voice = meta_splicer(ini_per_voice)
+            if voice_header:
+                unpacked.append(m.group(1))
+                unpacked.extend(("  " + h for h in yaml.dump(voice_header).rstrip().split("\n")))
+            if remainder_per_voice:
+                if not voice_header: unpacked.append(m.group(1))
+                unpacked.extend(singline(ini_per_voice, 1))
+                for r in remainder_per_voice:
+                    unpacked.extend(singline(r, 1))
+            else:
+                if not voice_header: unpacked.append(m.group(1))
+                unpacked.extend(singline(ini_per_voice, 1))
+        yield "\n".join(unpacked)
     else:
         yield from singline(("0: " if header else "") + string)
 
