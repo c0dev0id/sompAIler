@@ -30,6 +30,7 @@ def expand(string):
     def multiline(string):
         nonlocal look_for_loop, ext, loop
         last_line_is_voice = False
+        complex_measure = unpack_measure
 
         for m in re.finditer(numindent_rx, string, re.MULTILINE):
 
@@ -50,7 +51,8 @@ def expand(string):
 
                 if line_split[0].startswith('|'):
                     line_split[0] = line_split[0][1:]
-                else:
+                    complex_measure = unpack_measure
+                elif complex_measure == unpack_measure:
                     preamble = line_split.pop(0)
                     yield from singline(preamble)
                     yield "\n---"
@@ -85,6 +87,7 @@ def expand(string):
                 string = m.group(3)
                 if string.startswith("---"):
                     look_for_loop = True
+                    complex_measure = singline
                 elif look_for_loop:
                     if string.startswith("_loop: "):
                         ext = True
@@ -108,7 +111,7 @@ def expand(string):
             sep = ""
             for part1 in parts:
                 if sep: yield sep
-                yield from unpack_measure(part1)
+                yield from complex_measure(part1)
                 sep = "\n---"
 
     try:
