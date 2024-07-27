@@ -9,14 +9,18 @@
 
 <ul>
 <li>{{ neusician.ver }}</li>
-<li><code>{{ neusician.diff }}</code></li>
+{% if neusician.diff %}
+<li><pre>{{ neusician.diff }}</pre></li>
+{% endif %}
 </ul>
 
 <h3>Sompyler</h3>
 
 <ul>
 <li>{{ sompyler.ver }}</li>
-<li><code>{{ sompyler.diff }}</code></li>
+{% if sompyler.diff %}
+<li><pre>{{ sompyler.diff }}</pre></li>
+{% endif %}
 </ul>
 
 <h2>Your current position in the queue</h2>
