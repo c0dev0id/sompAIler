@@ -227,16 +227,23 @@ def create_app(test_config=None):
         return render_template(
                 "resources-info.tmpl",
                 neusician={
-                    'ver': subprocess.run(["git", "describe"], capture_output=True, check=True).stdout,
-                    'diff': subprocess.run(["git", "diff"], capture_output=True, check=True).stdout
+                    'ver': subprocess.run([
+                        "git", "describe"
+                        ], capture_output=True, check=True
+                    ).stdout.decode('utf-8'),
+                    'diff': subprocess.run(["git", "diff"
+                        ], capture_output=True, check=True
+                    ).stdout.decode('utf-8')
                 },
                 sompyler={
                     'ver': subprocess.run([
                         "git", "-C", app.config["SOMPYLER"], "describe"
-                    ], capture_output=True, check=True),
+                        ], capture_output=True, check=True
+                    ).stdout.decode('utf-8'),
                     'diff': subprocess.run([
                         "git", "-C", app.config["SOMPYLER"], "diff"
-                    ], capture_output=True, check=True)
+                        ], capture_output=True, check=True
+                    ).stdout.decode('utf-8')
                 },
                 **procman.waiting_stats_for_user(None),
                 limits=app.config.get("SOMPYLER_LIMITS").split(":")
