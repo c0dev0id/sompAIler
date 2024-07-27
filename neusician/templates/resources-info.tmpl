@@ -3,6 +3,23 @@
 {% block title %}Limits information for this Online Sompyler{% endblock %}
 
 {% block main %}
+<h2>General version info</h2>
+
+<h3>Neusician</h3>
+
+<ul>
+<li>{{ neusician.ver }}</li>
+<li><code>{{ neusician.diff }}</code></li>
+</ul>
+
+<h3>Sompyler</h3>
+
+<ul>
+<li>{{ sompyler.ver }}</li>
+<li><code>{{ sompyler.diff }}</code></li>
+</ul>
+
+<h2>Your current position in the queue</h2>
 <p>The following info is valid for this <a href="/sompyle">Online Sompyler instance</a>. Other providers of this open source software may choose different settings. But this machine is small, despite the heavy task of offline, score-based audio synthesis.</p>
 
 <p>Due to limited free resources, the service lets logged-in users compete for reservation of one of <strong>{{ workers }}</strong> worker processes. Currently, <strong>{{ waiting }}</strong> users wait for a free worker. However, There is not much use in not trying, you need to try to climb in the ranking to be the next &hellip;</p>
@@ -15,7 +32,7 @@
 
 <p>Technically, though, the reservation time could also be shorter if a premium user purchased time in advance, so they can seize a worker process even in the period of protected reservation time of users with less purchased, let alone with "free" time. That purchased time however would pass by as well.</p>
 
-<p>In this test-bed, however, there are no "premium" users, paying or not. Requests are politely ignored or replied with a hint about the possibility of an own private instance of the software. Think about how much you trust the provider of any (e.g. of this) specific Online Sompyler instance in that respect. After all, though, the provider could change their mind at their sole descretion. It is not a public service where use of money to circumvent fairness, if fake or real, would be called "corruption".</p>
+<p>In this test-bed, however, there are no "premium" users, paying money or not. Requests are politely ignored or replied with a hint about the possibility of an own private instance of the software. Think about how much you trust the provider of any (e.g. of this) specific Online Sompyler instance in that respect. After all, though, the provider could change their mind at their sole descretion. It is not a public service where use of money to circumvent fairness, if fake or real, would be called "corruption".</p>
 
 <p>It is a private machine at last and due to the GPL, everyone could likewise provide Neusician and Sompyler driven by their hardware on their own terms insofar these are compatible to the General Public License. If at all for the public instead of just private which of course is possible, too. To technically enable fairness by technical means that also cannot avoid the possibility of "unfairness" and being transparent about that possibility should foster development of many <em>local</em> instances of the Neusician/sompyler software duo, no matter if provided for the public in a single case.</p>
 

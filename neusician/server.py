@@ -222,10 +222,22 @@ def create_app(test_config=None):
                 return "Old password is not identical with the stored one", 400
             return redirect(url_for("private-yaml-acceptor"), code=303)
 
-    @app.route('/sompyle/limits-info')
+    @app.route('/info')
     def limits():
         return render_template(
-                "resources-limits-info.tmpl", 
+                "resources-info.tmpl",
+                neusician={
+                    'ver': subprocess.run(["git", "describe"], capture_output=True, check=True).stdout,
+                    'diff': subprocess.run(["git", "diff"], capture_output=True, check=True).stdout
+                },
+                sompyler={
+                    'ver': subprocess.run([
+                        "git", "-C", app.config["SOMPYLER"], "describe"
+                    ], capture_output=True, check=True),
+                    'diff': subprocess.run([
+                        "git", "-C", app.config["SOMPYLER"], "diff"
+                    ], capture_output=True, check=True)
+                },
                 **procman.waiting_stats_for_user(None),
                 limits=app.config.get("SOMPYLER_LIMITS").split(":")
             )
