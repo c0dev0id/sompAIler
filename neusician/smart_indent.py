@@ -2,7 +2,7 @@ import re, io
 import yaml
 from .input_error import last_lines, ScorePreprocessingError
 
-numindent_rx = r"^(\d+(?!\d*:))?([ \t]*)(.+)"
+numindent_rx = r"^(\d+(?!\d*:))?([ \t]*)(.*)"
 
 def singline(string, ini_indent=0):
     basic_indent = '  ' * ini_indent
@@ -29,7 +29,6 @@ def expand(string):
 
     def multiline(string):
         nonlocal look_for_loop, ext, loop
-        last_line_is_voice = False
         complex_measure = unpack_measure
 
         for m in re.finditer(numindent_rx, string, re.MULTILINE):
@@ -97,10 +96,6 @@ def expand(string):
                     else:
                         look_for_loop = None
 
-                if string[0] in "|[" and not last_line_is_voice:
-                    yield "\n---"
-                else:
-                    last_line_is_voice = bool(re.match(r"[a-zA-Z]\w+:\s*\#?", string))
                 parts = [m.group(0)]
                 if loop and loop > 1:
                     yield f"_loop: {loop}"
