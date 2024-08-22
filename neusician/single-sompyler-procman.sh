@@ -40,8 +40,8 @@ if [ "${IND-0}" -gt "${OUTD-0}" ]; then
 	cd $SOMPYLER
 	case "$W0MODE" in
 		check-only)
-		   W0MODE='--workers 0'
-		   WORKERS_CNT=0
+		   W0MODE=""
+		   WORKERS_PER_USER=0
 		   ;;
 		reverb)
 		   W0MODE='--room' ;;
@@ -58,7 +58,7 @@ if [ "${IND-0}" -gt "${OUTD-0}" ]; then
 	esac
 	: > "${T}/status"
         . venv/bin/activate
-	./scripts/sompyle -v "--workers=${WORKERS_CNT-1}" "${T}/score" "$OUTFILE" $W0MODE > "${T}/OUT.log" 2> "${T}/ERR.log" &
+	./scripts/sompyle -v "--workers=${WORKERS_PER_USER-1}" "${T}/score" "$OUTFILE" $W0MODE > "${T}/OUT.log" 2> "${T}/ERR.log" &
 	PID=$!
         printf "%s %d" "${U}" "$PID" > "${T}/worker.pid"
         while [ ! -f "$OUTFILE" ] || [ -s "$OUTFILE" ]; do

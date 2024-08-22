@@ -281,7 +281,8 @@ def create_app(test_config=None):
 
             status = procman.get_status(
                     user, request.form.get("w0mode", "ff"),
-                    int(request.form.get("quota", 100))
+                    int(request.form.get("quota", 100)),
+                    workers=app.config.get("WORKERS_PER_USER")
                 )
 
             if status['frozen'] is True:
