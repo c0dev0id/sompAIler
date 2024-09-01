@@ -6,13 +6,42 @@
 
 <style>
 td { height: 1em; min-width: 1em; }
+td.marked { outline: 2px outset orange; }
+table { border-collapse: collapse;  }
+td { border:3px inset grey; }
+td.merge-left { border-left: none; background-color: lightgrey; }
+td.merge-right { border-right: none; background-color: lightgrey; }
 </style>
 
-<table border="border" style="border:1px solid black;">
+<script>
+
+function change_state(table, new_state) {
+    console.log("Change state to " + new_state);
+}
+
+$(function () {
+    $("td").click(function (e) {
+        e.stopImmediatePropagation();
+        $(this).toggleClass("marked");
+    });
+    $("#adder").click(function (e) {
+        e.preventDefault();
+        change_state($("table").first(), true);
+        
+    });
+    $("#dropper").click(function (e) {
+        e.preventDefault();
+        change_state($("table").first(), false);
+    });
+});
+</script>
+<table border="border" style="">
 {% for r in range(rows) %}
 <tr>{% for c in range(cols) %}<td></td>{% endfor %}</tr>
 {% endfor %}
 </table>
+
+<button id="dropper">Raus</button> <button id="adder">Rein</button>
 
 <pre id="output"></pre>
 
