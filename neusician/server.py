@@ -249,6 +249,10 @@ def create_app(test_config=None):
                 limits=app.config.get("SOMPYLER_LIMITS").split(":")
             )
 
+    @app.route('/chaintool', methods=('GET',))
+    def chaintool():
+        return render_template("chain-tool.tmpl", cols=12, rows=5)
+
     @app.route('/sompyle/reserved-a-worker-for-tests', methods=('GET', 'POST'), endpoint="private-yaml-acceptor")
     @auth.login_required
     @app.route('/sompyle', methods=('GET','POST'), endpoint='public-yaml-acceptor')
@@ -477,7 +481,7 @@ def create_app(test_config=None):
             last_lines=exception.tail_log()
         ), 400
 
-    @app.teardown_appcontext
+    @app.teardown_request
     def close_connection(exception):
         procman.close_connection()
 

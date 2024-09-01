@@ -1,0 +1,19 @@
+{% extends "base.tmpl" %}
+{% block heading %}Interactive demos{% endblock %}
+{% block title %}Chain construction tool{% endblock %}
+
+{% block main %}
+
+<style>
+td { height: 1em; min-width: 1em; }
+</style>
+
+<table border="border" style="border:1px solid black;">
+{% for r in range(rows) %}
+<tr>{% for c in range(cols) %}<td></td>{% endfor %}</tr>
+{% endfor %}
+</table>
+
+<pre id="output"></pre>
+
+{% endblock %}
