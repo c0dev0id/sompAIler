@@ -15,12 +15,13 @@ td.merge-left { padding-left: 0; border-left: none }
 td.merge-right { padding-right: 0; border-right: none; }
 td.merge-top { padding-top: 0; border-top: none; }
 td.merge-bottom { padding-bottom: 0; border-right: none; }
-th input[type=number] { width: 3em; }
+th .ui-spinner { width: 4em; }
 </style>
 
 <script>
 
 max_lane_id = 0
+rows = 
 function change_state(table, new_state) {
     console.log("Change state to " + new_state);
     var lane_ids = table.data("laneids")
@@ -53,9 +54,16 @@ function change_state(table, new_state) {
 }
 
 $(function () {
-    $("td").on("click touchenter", function (e) {
+    $("td").on("click", function (e) {
         e.stopImmediatePropagation();
         $(this).toggleClass("marked");
+        var x = $(this).closest("tr").children("td").index(this);
+        $("#in-l").val(x);
+        $("#in-r").val($(this).closest("tr").children().length - x - 2);
+        var y = $(this).closest("tr").index() - 1;
+        $("#in-u").val(y);
+        $("#in-d").val($(this).closest("tbody").children().length - y - 2);
+        
     });
     $("#adder").click(function (e) {
         e.preventDefault();
@@ -66,21 +74,19 @@ $(function () {
         e.preventDefault();
         change_state($("table").first(), false);
     });
-    $("#topspan").spinner();
-    $("#bottomspan").spinner();
-    $("#leftspan").spinner();
-    $("#rightspan").spinner();
+    $("#in-l").spinner();
+    $("#in-r").spinner();
+    $("#in-u").spinner();
+    $("#in-d").spinner();
 });
 </script>
 <table border="border" style="">
-<tr><th>#</th>{% for c in range(cols) %}<th>{{ c }}</th>{% endfor %}<th rowspan="{{ rows + 1 }}" style="width: 5em;">
-x: <input type="number"><br>
-y: <input type="number"><br>
+<tr><th>#</th>{% for c in range(cols) %}<th>{{ c }}</th>{% endfor %}<th rowspan="{{ rows + 1 }}" style="width: 6em;">
 <button id="dropper">Raus</button><br>
-l: <input type="number"><br>
-r: <input type="number"><br>
-u: <input type="number"><br>
-d: <input type="number"><br>
+l: <input id="in-l" min="0"><br>
+r: <input id="in-r" min="0"><br>
+u: <input id="in-u" min="0"><br>
+d: <input id="in-d" min="0"><br>
 <button id="adder">Rein</button>
 </th></tr>
 {% for r in range(rows) %}
