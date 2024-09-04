@@ -8,19 +8,52 @@
 td { height: 1em; min-width: 1em; }
 td.marked { outline: 2px outset orange; }
 table { border-collapse: collapse;  }
-td { border:3px inset grey; }
-td.merge-left { border-left: none; background-color: lightgrey; }
-td.merge-right { border-right: none; background-color: lightgrey; }
+td { padding: 2px; border:3px inset grey; }
+td div { background-color: lightgrey }
+td.active-lane div { background-color: grey; }
+td.merge-left { padding-left: 0; border-left: none }
+td.merge-right { padding-right: 0; border-right: none; }
+td.merge-top { padding-top: 0; border-top: none; }
+td.merge-bottom { padding-bottom: 0; border-right: none; }
+th input[type=number] { width: 3em; }
 </style>
 
 <script>
 
+max_lane_id = 0
 function change_state(table, new_state) {
     console.log("Change state to " + new_state);
+    var lane_ids = table.data("laneids")
+    var rows = table.children("tr");
+    var cols = rows.first().children("td").length;
+    rows = rows.length;
+    let this_lane_id, min_lane_id;
+    let mymax_lane_id = max_lane_id;
+    if ( lane_ids == null ) {
+         lane_ids = new Array(cols * rows);
+         table.data("laneids", lane_ids);
+    }
+    table.children("tr").each(function (i) {
+        $(this).children("td").each(function (j) {
+             if ( $(this).hasClass("marked").length ) {
+                 if (lane_ids[ i * cols + j ] == null) {
+                     this_lane_id = lane_ids[ i * cols + j ]
+                     if (this_lane_id < mymax_lane_id)
+                         mymax_lane_id = this_lane_id;
+                 }
+                 lane_ids[ i * cols + j ] = max_lane_id+1;
+                 $(this).append("div");
+             }
+             else {
+                 lane_ids[ i * cols + j ] = null;
+                 $(this).empty();
+             }
+        });
+    });
 }
 
 $(function () {
-    $("td").click(function (e) {
+    $("td").on("click touchenter", function (e) {
         e.stopImmediatePropagation();
         $(this).toggleClass("marked");
     });
@@ -33,15 +66,31 @@ $(function () {
         e.preventDefault();
         change_state($("table").first(), false);
     });
+    $("#topspan").spinner();
+    $("#bottomspan").spinner();
+    $("#leftspan").spinner();
+    $("#rightspan").spinner();
 });
 </script>
 <table border="border" style="">
+<tr><th>#</th>{% for c in range(cols) %}<th>{{ c }}</th>{% endfor %}<th rowspan="{{ rows + 1 }}" style="width: 5em;">
+x: <input type="number"><br>
+y: <input type="number"><br>
+<button id="dropper">Raus</button><br>
+l: <input type="number"><br>
+r: <input type="number"><br>
+u: <input type="number"><br>
+d: <input type="number"><br>
+<button id="adder">Rein</button>
+</th></tr>
 {% for r in range(rows) %}
-<tr>{% for c in range(cols) %}<td></td>{% endfor %}</tr>
+<tr><th>{{ rows-r }}</th>
+{% for c in range(cols) %}<td></td>{% if r == 0 %}{% endif %}{% endfor %}
+</tr>
 {% endfor %}
 </table>
 
-<button id="dropper">Raus</button> <button id="adder">Rein</button>
+
 
 <pre id="output"></pre>
 
