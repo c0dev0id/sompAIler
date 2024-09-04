@@ -8,26 +8,26 @@
 td { height: 1em; min-width: 1em; }
 td.marked { outline: 2px outset orange; }
 table { border-collapse: collapse;  }
-td { padding: 2px; border:3px inset grey; }
-td div { background-color: lightgrey }
+td { margin: 2px; border:3px inset grey; }
+td div { background-color: grey; height: 100%; width: 100%; }
 td.active-lane div { background-color: grey; }
-td.merge-left { padding-left: 0; border-left: none }
-td.merge-right { padding-right: 0; border-right: none; }
-td.merge-top { padding-top: 0; border-top: none; }
-td.merge-bottom { padding-bottom: 0; border-right: none; }
+td.merge-left { margin-left: 0; border-left: none }
+td.merge-right { margin-right: 0; border-right: none; }
+td.merge-top { margin-top: 0; border-top: none; }
+td.merge-bottom { margin-bottom: 0; border-right: none; }
 th .ui-spinner { width: 4em; }
 </style>
 
 <script>
 
-max_lane_id = 0
-rows = 
+max_lane_id = 0;
 function change_state(table, new_state) {
     console.log("Change state to " + new_state);
-    var lane_ids = table.data("laneids")
+    table = table.find("tbody");
+    var lane_ids = table.data("laneids");
     var rows = table.children("tr");
-    var cols = rows.first().children("td").length;
-    rows = rows.length;
+    var cols = rows.eq(1).children("td").length;
+    rows = rows.length - 1;
     let this_lane_id, min_lane_id;
     let mymax_lane_id = max_lane_id;
     if ( lane_ids == null ) {
@@ -35,19 +35,21 @@ function change_state(table, new_state) {
          table.data("laneids", lane_ids);
     }
     table.children("tr").each(function (i) {
+        i -= 1;
         $(this).children("td").each(function (j) {
-             if ( $(this).hasClass("marked").length ) {
-                 if (lane_ids[ i * cols + j ] == null) {
+             if ( $(this).hasClass("marked") ) {
+                 if (new_state && lane_ids[ i * cols + j ] == null) {
                      this_lane_id = lane_ids[ i * cols + j ]
                      if (this_lane_id < mymax_lane_id)
                          mymax_lane_id = this_lane_id;
+                     lane_ids[ i * cols + j ] = max_lane_id+1;
+                     $(this).append("<div>");
                  }
-                 lane_ids[ i * cols + j ] = max_lane_id+1;
-                 $(this).append("div");
-             }
-             else {
-                 lane_ids[ i * cols + j ] = null;
-                 $(this).empty();
+                 else if (!new_state && lane_ids[ i * cols + j ]) {
+                     lane_ids[ i * cols + j ] = null;
+                     $(this).empty();
+                 }
+             	 $(this).removeClass("marked");
              }
         });
     });
@@ -68,7 +70,6 @@ $(function () {
     $("#adder").click(function (e) {
         e.preventDefault();
         change_state($("table").first(), true);
-        
     });
     $("#dropper").click(function (e) {
         e.preventDefault();
