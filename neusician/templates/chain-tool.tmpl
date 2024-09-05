@@ -8,57 +8,216 @@
 td { height: 1em; min-width: 1em; }
 td.marked { outline: 2px outset orange; }
 table { border-collapse: collapse;  }
-td { margin: 2px; border:3px inset grey; }
-td div { background-color: grey; height: 100%; width: 100%; }
+td { margin: 2px; padding: 2px; border:3px inset grey; }
+td div { background-color: lightgrey; outline: 1px solid lightgrey; height: 100%; width: 100%; }
 td.active-lane div { background-color: grey; }
-td.merge-left { margin-left: 0; border-left: none }
-td.merge-right { margin-right: 0; border-right: none; }
-td.merge-top { margin-top: 0; border-top: none; }
-td.merge-bottom { margin-bottom: 0; border-right: none; }
+td.merge-left { margin-left: 0; padding-left: 0; border-left: none }
+td.merge-right { margin-right: 0; padding-right: 0; border-right: none; }
+td.merge-top { margin-top: 0; padding-top: 0;border-top: none; }
+td.merge-bottom { margin-bottom: 0; padding-bottom: 0; border-right: none; }
 th .ui-spinner { width: 4em; }
 </style>
 
 <script>
 
 max_lane_id = 0;
+function Counter() {
+    let cnt = object;
+
+    this.up = function (name) {
+        if (name in cnt)
+            ++cnt[name];
+        else cnt[name] = 1;
+        return cnt[name];
+    }
+
+    this.down = function (name) {
+        if (name in cnt && cnt[name])
+            --cnt[name];
+        return cnt[name];
+    }
+
+    this.sorted_lanes = function () {
+        return Object.keys(cnt).filter((n) => x[n] > 0).map((x) => parseInt(x)).sorted();
+    }
+}
+
 function change_state(table, new_state) {
     console.log("Change state to " + new_state);
-    table = table.find("tbody");
+    var table = table.find("tbody");
+    var tds = table.find("td");
+
     var lane_ids = table.data("laneids");
+    var touched = table.data("touched") || new Counter();
     var rows = table.children("tr");
     var cols = rows.eq(1).children("td").length;
     rows = rows.length - 1;
-    let this_lane_id, min_lane_id;
-    let mymax_lane_id = max_lane_id;
     if ( lane_ids == null ) {
          lane_ids = new Array(cols * rows);
          table.data("laneids", lane_ids);
+         table.data("touched", touched);
+         return;
     }
+
+    var min_lane_id = touched.sorted_lanes[0];
+    if ( min_lane_id > max_lane_id ) {
+        max_lane_id = min_lane_id;
+    }
+
+    let this_lane_id, min_lane_id;
+    const i_left = -1;
+    const i_dgnw = -1 - 12;
+    const i_top = -12;
+    const i_dgne = +1 - 12;
+    const i_right = +1;
+    const i_dgse = +1 + 12
+    const i_bottom = +12;
+    const i_dgsw = -1 + 12;
     table.children("tr").each(function (i) {
         i -= 1;
         $(this).children("td").each(function (j) {
+             let linc = i * cols + j;
              if ( $(this).hasClass("marked") ) {
-                 if (new_state && lane_ids[ i * cols + j ] == null) {
-                     this_lane_id = lane_ids[ i * cols + j ]
-                     if (this_lane_id < mymax_lane_id)
-                         mymax_lane_id = this_lane_id;
-                     lane_ids[ i * cols + j ] = max_lane_id+1;
+                 if (new_state) {
+                     lane_ids[ linc ] = min_lane_id;
                      $(this).append("<div>");
                  }
-                 else if (!new_state && lane_ids[ i * cols + j ]) {
-                     lane_ids[ i * cols + j ] = null;
+                 else {
+                     lane_ids[ linc ] = null;
                      $(this).empty();
                  }
-             	 $(this).removeClass("marked");
              }
         });
+    });
+    tds.each(function (linc) {
+        var leftroom = linc % cols;
+        var toproom = linc+1 > cols;
+        var rightroom = linc+1 % cols;
+        var bottomroom = linc / cols - rows + 1 < rows;
+
+        if ( new_state == true ) {
+            if ( $(this).hasClass("marked") )
+                $(this).addClass("active-lane");
+            else {
+                $(this).removeClass("active-lane");
+                return;
+            }
+
+            lane_ids[linc] = min_lane_id;
+
+            let strl = touched[ lane_ids[linc + i_left] ]
+            let stru = touched[ lane_ids[linc + i_top] ]
+            let strr = touched[ lane_ids[linc + i_right] ]
+            let strd = touched[ lane_ids[linc + i_bottom] ]
+            let dgnw = touched[ lane_ids[linc + i_dgnw] ]
+            let dgne = touched[ lane_ids[linc + i_dgne] ]
+            let dgse = touched[ lane_ids[linc + i_dgse] ]
+            let dgsw = touched[ lane_ids[linc + i_dgsw] ]
+
+            if ( leftroom && (dgsw || strl || dgnw) ) {
+                if (strl) {
+                    tds.eq(linc + i_left).addClass("merge-right");
+                    $(this).addClass("merge-left");
+                }
+                else {
+                    if ( dgsw ) tds.eq(linc + i_dgsw).addClass("merge-right");
+                    if ( dgnw ) tds.eq(linc + i_dgnw).addClass("merge-right");
+                }
+            }
+
+            if ( toproom && (dgnw || stru || dgne) ) {
+                if (stru) {
+                    tds.eq(linc + i_top).addClass("merge-bottom");
+                    $(this).addClass("merge-top");
+                }
+                else {
+                    if ( dgnw ) tds.eq(linc + i_dgnw).addClass("merge-bottom");
+                    if ( dgne ) tds.eq(linc + i_dgne).addClass("merge-bottom");
+                }
+            }
+
+            if ( rightroom && (dgne || strr || dgse) ) {
+        	if ( !$(this).hasClass("marked") ) return;
+                if (strr) {
+                    tds.eq(linc + i_right).addClass("merge-left");
+                    $(this).addClass("merge-right");
+                }
+                else {
+                    if ( dgnw ) tds.eq(linc + i_dgne).addClass("merge-left");
+                    if ( dgse ) tds.eq(linc + i_dgse).addClass("merge-left");
+                }
+            }
+
+            if ( bottomroom && (dgse || strd || dgsw) ) {
+                if (strd) {
+                    tds.eq(linc + i_bottom).addClass("merge-top");
+                    $(this).addClass("merge-bottom");
+                }
+                else {
+                    if ( dgnw ) tds.eq(linc + i_dgnw).addClass("merge-top");
+                    if ( dgsw ) tds.eq(linc + i_dgsw).addClass("merge-top");
+                }
+            }
+
+        }
+
+        else if ( new_state == false ) {
+            if ( !$(this).hasClass("marked") ) return;
+            if ( leftroom && lane_ids[linc + i_left] != null )
+                tds.eq(linc + i_left).removeClass("merge-right");
+
+            if ( leftroom && toproom && lane_ids[linc + i_dgnw] != null ) {
+               if ( lane_ids[linc + i_left] == null)
+                 tds.eq(linc + i_dgnw).removeClass("merge-bottom");
+               if (lane_ids[linc + i_top] == null)
+                 tds.eq(linc + i_dgnw).removeClass("merge-right");
+            }
+
+            if ( toproom && lane_ids[linc + i_top] != null )
+                tds.eq(linc + i_top).removeClass("merge-bottom");
+
+            if ( toproom && rightroom && lane_ids[linc + i_dgne] != null ) {
+               if ( lane_ids[linc + i_right] == null )
+                 tds.eq(linc + i_dgnw).removeClass("merge-bottom");
+               if ( lane_ids[linc + i_top] == null )
+                 tds.eq(linc + i_dgnw).removeClass("merge-left");
+            }
+
+            if ( rightroom && lane_ids[linc + i_right] != null )
+                tds.eq(linc + i_right).removeClass("merge-left");
+
+            if ( rightroom && bottomroom && lane_ids[linc + i_dgse] != null ) {
+               if ( lane_ids[linc + i_right] == null )
+                 tds.eq(linc + i_dgse).removeClass("merge-top");
+               if ( lane_ids[linc + i_bottom] == null )
+                 tds.eq(linc + i_dgnw).removeClass("merge-left");
+            }
+
+            if ( bottomroom && lane_ids[linc + i_bottom] != null )
+                tds.eq(linc + i_bottom).removeClass("merge-top");
+
+            if ( bottomroom && leftroom && lane_ids[linc + i_dgsw] != null ) {
+               if ( lane_ids[linc + i_left] == null )
+                 tds.eq(linc + i_dgse).removeClass("merge-top");
+               if ( lane_ids[linc + i_bottom] == null )
+                 tds.eq(linc + i_dgnw).removeClass("merge-right");
+            }
+        }
+
+        $(this).removeClass("marked");
+
     });
 }
 
 $(function () {
+    $("table").change_state(null); /* init */
     $("td").on("click", function (e) {
         e.stopImmediatePropagation();
         $(this).toggleClass("marked");
+        var tbody = $(this).closest("tbody");
+        var lane_id = tbody.data("laneids")[ $(this).index() ] || max_lane_id+1;
+        var touched = tbody.data("touched")[ $(this).hasClass("marked") ? "up" : "down" ](lane_id);
+        console.log(`Lane id {lane_id} now marked {touched} times.`);
         var x = $(this).closest("tr").children("td").index(this);
         $("#in-l").val(x);
         $("#in-r").val($(this).closest("tr").children().length - x - 2);
@@ -69,29 +228,29 @@ $(function () {
     });
     $("#adder").click(function (e) {
         e.preventDefault();
-        change_state($("table").first(), true);
+        change_state($(this).closest("table"), true);
     });
     $("#dropper").click(function (e) {
         e.preventDefault();
-        change_state($("table").first(), false);
+        change_state($(this).closest("table"), false);
     });
-    $("#in-l").spinner();
-    $("#in-r").spinner();
-    $("#in-u").spinner();
-    $("#in-d").spinner();
+    $(".in-l").spinner();
+    $(".in-r").spinner();
+    $(".in-u").spinner();
+    $(".in-d").spinner();
 });
 </script>
-<table border="border" style="">
+<table style="">
 <tr><th>#</th>{% for c in range(cols) %}<th>{{ c }}</th>{% endfor %}<th rowspan="{{ rows + 1 }}" style="width: 6em;">
 <button id="dropper">Raus</button><br>
-l: <input id="in-l" min="0"><br>
-r: <input id="in-r" min="0"><br>
-u: <input id="in-u" min="0"><br>
-d: <input id="in-d" min="0"><br>
+l: <input class="in-l" min="0"><br>
+r: <input class="in-r" min="0"><br>
+u: <input class="in-u" min="0"><br>
+d: <input class="in-d" min="0"><br>
 <button id="adder">Rein</button>
 </th></tr>
 {% for r in range(rows) %}
-<tr><th>{{ rows-r }}</th>
+<tr><th>{{ rows-r-1 }}</th>
 {% for c in range(cols) %}<td></td>{% if r == 0 %}{% endif %}{% endfor %}
 </tr>
 {% endfor %}
