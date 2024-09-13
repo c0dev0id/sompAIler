@@ -251,7 +251,11 @@ def create_app(test_config=None):
 
     @app.route('/chaintool', methods=('GET',))
     def chaintool():
-        return render_template("chain-tool.tmpl", cols=12, rows=5)
+        return render_template("chain-tool.tmpl",
+                    cols=int(request.args.get("cols", 12)),
+                    rows=int(request.args.get("rows", 5)),
+                    base=int(request.args.get("base", 0))
+                )
 
     @app.route('/sompyle/reserved-a-worker-for-tests', methods=('GET', 'POST'), endpoint="private-yaml-acceptor")
     @auth.login_required
