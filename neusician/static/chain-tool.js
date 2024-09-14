@@ -15,6 +15,16 @@ function Counter() {
         return cnt[name];
     }
 
+    this.reset = function (name) {
+	if (name in cnt) cnt[name] = 0;
+	return;
+    }
+
+    this.is = function (name) {
+	if (name in cnt) return cnt[name] > 0;
+	else return;
+    }
+
     this.sorted_lanes = function () {
         return Object.keys(cnt).filter((n) => cnt[n] > 0).map((x) => parseInt(x)).toSorted();
     }
@@ -40,6 +50,7 @@ function change_state(table, new_state) {
     var min_lane_id = touched.sorted_lanes()[0];
     if ( min_lane_id > max_lane_id ) {
         max_lane_id = min_lane_id;
+	console.log(`New max_lane_id = ${max_lane_id}`)
     }
 
     let this_lane_id;
@@ -58,7 +69,9 @@ function change_state(table, new_state) {
              if ( $(this).hasClass("marked") ) {
                  if (new_state) {
                      lane_ids[ linc ] = min_lane_id;
-                     $(this).append("<div>");
+                     if ( $(this).is(":empty") ) {
+			 $(this).append("<div>");
+		     }
                  }
                  else {
                      lane_ids[ linc ] = null;
@@ -68,6 +81,7 @@ function change_state(table, new_state) {
         });
     });
     tds.each(function (linc) {
+    	var indicator = 0;
         var leftroom = linc % cols;
         var toproom = linc+1 > cols;
         var rightroom = linc+1 % cols;
@@ -83,23 +97,30 @@ function change_state(table, new_state) {
 
             lane_ids[linc] = min_lane_id;
 
-            let strl = touched[ lane_ids[linc + i_left] ]
-            let stru = touched[ lane_ids[linc + i_top] ]
-            let strr = touched[ lane_ids[linc + i_right] ]
-            let strd = touched[ lane_ids[linc + i_bottom] ]
-            let dgnw = touched[ lane_ids[linc + i_dgnw] ]
-            let dgne = touched[ lane_ids[linc + i_dgne] ]
-            let dgse = touched[ lane_ids[linc + i_dgse] ]
-            let dgsw = touched[ lane_ids[linc + i_dgsw] ]
+            let strl = touched.is( lane_ids[linc + i_left] );
+            let stru = touched.is( lane_ids[linc + i_top] );
+            let strr = touched.is( lane_ids[linc + i_right] );
+            let strd = touched.is( lane_ids[linc + i_bottom] );
+            let dgnw = touched.is( lane_ids[linc + i_dgnw] );
+            let dgne = touched.is( lane_ids[linc + i_dgne] );
+            let dgse = touched.is( lane_ids[linc + i_dgse] );
+            let dgsw = touched.is( lane_ids[linc + i_dgsw] );
 
             if ( leftroom && (dgsw || strl || dgnw) ) {
                 if (strl) {
                     tds.eq(linc + i_left).addClass("merge-right");
                     $(this).addClass("merge-left");
+		    indicator += 1;
                 }
                 else {
-                    if ( dgsw ) tds.eq(linc + i_dgsw).addClass("merge-right");
-                    if ( dgnw ) tds.eq(linc + i_dgnw).addClass("merge-right");
+                    if ( dgsw ) {
+			tds.eq(linc + i_dgsw).addClass("merge-right");
+			indicator += 2;
+		    }
+                    if ( dgnw ) {
+		    	tds.eq(linc + i_dgnw).addClass("merge-right");
+			indicator += 4;
+		    }
                 }
             }
 
@@ -107,22 +128,35 @@ function change_state(table, new_state) {
                 if (stru) {
                     tds.eq(linc + i_top).addClass("merge-bottom");
                     $(this).addClass("merge-top");
+		    indicator += 8;
                 }
                 else {
-                    if ( dgnw ) tds.eq(linc + i_dgnw).addClass("merge-bottom");
-                    if ( dgne ) tds.eq(linc + i_dgne).addClass("merge-bottom");
+                    if ( dgnw ) {
+		    	tds.eq(linc + i_dgnw).addClass("merge-bottom");
+			indicator += 16;
+		    }
+                    if ( dgne ) {
+		    	tds.eq(linc + i_dgne).addClass("merge-bottom");
+			indicator += 32;
+		    }
                 }
             }
 
             if ( rightroom && (dgne || strr || dgse) ) {
-        	if ( !$(this).hasClass("marked") ) return;
                 if (strr) {
                     tds.eq(linc + i_right).addClass("merge-left");
                     $(this).addClass("merge-right");
+		    indicator += 64;
                 }
                 else {
-                    if ( dgnw ) tds.eq(linc + i_dgne).addClass("merge-left");
-                    if ( dgse ) tds.eq(linc + i_dgse).addClass("merge-left");
+                    if ( dgnw ) {
+		    	tds.eq(linc + i_dgne).addClass("merge-left");
+			indicator += 128;
+		    }
+                    if ( dgse ) {
+		    	tds.eq(linc + i_dgse).addClass("merge-left");
+			indicator += 256;
+		    }
                 }
             }
 
@@ -130,12 +164,21 @@ function change_state(table, new_state) {
                 if (strd) {
                     tds.eq(linc + i_bottom).addClass("merge-top");
                     $(this).addClass("merge-bottom");
+		    indicator += 512;
                 }
                 else {
-                    if ( dgnw ) tds.eq(linc + i_dgnw).addClass("merge-top");
-                    if ( dgsw ) tds.eq(linc + i_dgsw).addClass("merge-top");
+                    if ( dgnw ) {
+		    	tds.eq(linc + i_dgnw).addClass("merge-top");
+			indicator += 1024;
+		    }
+                    if ( dgsw ) {
+		        tds.eq(linc + i_dgsw).addClass("merge-top");
+			indicator += 2048;
+		    }
                 }
             }
+
+            console.log(`indicator: ${indicator}`);
 
         }
 
@@ -185,9 +228,9 @@ function change_state(table, new_state) {
         $(this).removeClass("marked");
 
     });
-    let old_value = touched[min_lane_id];
+    let old_value = lane_ids[min_lane_id];
     console.log(`${min_lane_id} / ${old_value} was the old value`);
-    touched[ min_lane_id ] = 0;
+    touched.reset(min_lane_id);
 }
 
 $(function () {
