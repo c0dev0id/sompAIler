@@ -1,0 +1,14 @@
+{% extends "base.tmpl" %}
+{% block heading %}Interactive demos{% endblock %}
+{% block title %}Rhythm from trinary{% endblock %}
+
+{% block main %}
+
+<form method="POST">
+<input type="number" name="decimal" value="{{ current_value }}">
+<button>get</button>
+</form>
+
+<pre id="output">{{ output_code }}</pre>
+
+{% endblock %}

@@ -8,6 +8,8 @@ from .arbitextonotes import tones
 from .arbitrarygrooves import preprocess as ag_preprocess
 from .smart_indent import expand as indenter, unindent_from as unindenter
 from .markov_util import MarkovSpecError
+from .split_rhythmel import rhythm_from_trinary
+
 from flask import (
         Flask, render_template, request, jsonify, make_response, redirect,
         send_file, url_for
@@ -248,6 +250,18 @@ def create_app(test_config=None):
                 **procman.waiting_stats_for_user(None),
                 limits=app.config.get("SOMPYLER_LIMITS").split(":")
             )
+
+    @app.route('/from-trinary', methods=('GET','POST'))
+    def from_trinary():
+         if "decimal" in request.form:
+             decimal = request.form["decimal"]
+             output = rhythm_from_trinary(int(decimal))
+         else:
+             output = None
+         return render_template("sompyler-code-from-trinary.tmpl",
+              current_value=request.form.get("decimal", ""),
+              output_code=output
+         )
 
     @app.route('/chaintool', methods=('GET',))
     def chaintool():
