@@ -4,11 +4,28 @@
 
 {% block main %}
 
-<form method="POST">
-<input type="number" name="decimal" value="{{ current_value }}">
-<button>get</button>
-</form>
+<style type="text/css">
+.short { width: 4rem; }
+</style>
 
+{% if output_code is not none %}
 <pre id="output">{{ output_code }}</pre>
+{% endif %}
+
+<form method="POST">
+<dl>
+<dt><label for="dec-rhythm">Rhythm number</label></dt>
+<dd><input type="number" id="dec-rhythm" name="decimal_rhythm" value="{{ current_value }}"></dd>
+<dt><label for="segments">segments</label></dt>
+<dd><input class="short" id="segments" type="number" name="segmentlen" value="{{ segmentlen }}"></dd>
+<dt><label for="mel-props">Properties</label></dt>
+<dd><input class="short" id="mel-props" type="number" name="props" value="{{ props }}"> <input class="short" type="" name="central_offset" value="{{ central_offset }}"></dd>
+<dt><label for="dec-melody">Melody number</label></dt>
+<dd><input type="number" id="dec-melody" name="decimal_melody" value="{{ decimal_melody }}"></dd>
+</dl>
+</tr>
+<button>Sompyler code</button>
+</form>
+<table>
 
 {% endblock %}

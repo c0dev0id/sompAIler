@@ -8,7 +8,7 @@ from .arbitextonotes import tones
 from .arbitrarygrooves import preprocess as ag_preprocess
 from .smart_indent import expand as indenter, unindent_from as unindenter
 from .markov_util import MarkovSpecError
-from .split_rhythmel import rhythm_from_trinary
+from .split_rhythmel import from_trinary
 
 from flask import (
         Flask, render_template, request, jsonify, make_response, redirect,
@@ -253,15 +253,29 @@ def create_app(test_config=None):
 
     @app.route('/from-trinary', methods=('GET','POST'))
     def from_trinary():
-         if "decimal" in request.form:
-             decimal = request.form["decimal"]
-             output = rhythm_from_trinary(int(decimal))
-         else:
-             output = None
-         return render_template("sompyler-code-from-trinary.tmpl",
-              current_value=request.form.get("decimal", ""),
-              output_code=output
-         )
+        if "melody" in request.form:
+            melody = request.form.get("melody")
+        else:
+            melody = None
+        if "decimal_rhythm" in request.form:
+            decimal = request.form["decimal_rhythm"]
+            props = request.form.get("props")
+            if props and melody:
+                melody = f"{props}:{melody}"
+            elif melody:
+                return 400, "Melody number not interpretable without props"
+            output = from_trinary(
+                int(decimal), segmentlen=request.form.get("segmentlen"),
+                melody=melody
+            )
+        else:
+            output = None
+
+        return render_template("sompyler-code-from-trinary.tmpl",
+             current_value=request.form.get("decimal_rhythm", ""),
+             segmentlen=request.form.get("segmentlen"),
+             output_code=output
+        )
 
     @app.route('/chaintool', methods=('GET',))
     def chaintool():
