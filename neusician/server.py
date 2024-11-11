@@ -251,30 +251,38 @@ def create_app(test_config=None):
                 limits=app.config.get("SOMPYLER_LIMITS").split(":")
             )
 
-    @app.route('/from-trinary', methods=('GET','POST'))
-    def from_trinary():
-        if "melody" in request.form:
-            melody = request.form.get("melody")
+    @app.route('/chain-from-numbers', methods=('GET','POST'))
+    def chain_from_numbers():
+        if "decimal-melody" in request.form:
+            melody = request.form.get("decimal-melody")
         else:
             melody = None
-        if "decimal_rhythm" in request.form:
-            decimal = request.form["decimal_rhythm"]
-            props = request.form.get("props")
-            if props and melody:
-                melody = f"{props}:{melody}"
+        props = {}
+        if "decimal-rhythm" in request.form:
+            decimal = request.form["decimal-rhythm"]
+            if 'props-up' in request.form:
+                props = {
+                    'up': int(request.form.get("props-up") or 0),
+                    'down': int(request.form.get("props-down") or 0),
+                    'central': int(request.form.get("props-central") or 0),
+                    'offset': int(request.form.get("props-offset") or 0),
+                }
             elif melody:
                 return 400, "Melody number not interpretable without props"
             output = from_trinary(
-                int(decimal), segmentlen=request.form.get("segmentlen"),
-                melody=melody
+                int(decimal), request.form.get("segmentlen"),
+                melody=melody, **props
             )
         else:
             output = None
 
         return render_template("sompyler-code-from-trinary.tmpl",
-             current_value=request.form.get("decimal_rhythm", ""),
-             segmentlen=request.form.get("segmentlen"),
-             output_code=output
+            current_value=request.form.get("decimal-rhythm", ""),
+            segmentlen=request.form.get("segmentlen"),
+            props_up=props.get('up'), props_down=props.get('down'),
+            props_central=props.get('central'),
+            props_offset=props.get('offset'),
+            output_code=output
         )
 
     @app.route('/chaintool', methods=('GET',))

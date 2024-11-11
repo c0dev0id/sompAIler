@@ -1,6 +1,6 @@
 {% extends "base.tmpl" %}
 {% block heading %}Interactive demos{% endblock %}
-{% block title %}Rhythm from trinary{% endblock %}
+{% block title %}Rhythm/Melody from number{% endblock %}
 
 {% block main %}
 
@@ -15,13 +15,16 @@
 <form method="POST">
 <dl>
 <dt><label for="dec-rhythm">Rhythm number</label></dt>
-<dd><input type="number" id="dec-rhythm" name="decimal_rhythm" value="{{ current_value }}"></dd>
+<dd><input type="number" id="dec-rhythm" name="decimal-rhythm" value="{{ current_value }}"></dd>
 <dt><label for="segments">segments</label></dt>
 <dd><input class="short" id="segments" type="number" name="segmentlen" value="{{ segmentlen }}"></dd>
 <dt><label for="mel-props">Properties</label></dt>
-<dd><input class="short" id="mel-props" type="number" name="props" value="{{ props }}"> <input class="short" type="" name="central_offset" value="{{ central_offset }}"></dd>
+<dd><input class="short" id="mel-props-up" type="number" name="props-up" value="{{ props_up }}"> steps to go up at once</dd>
+<dd><input class="short" id="mel-props-down" type="number" name="props-down" value="{{ props_down }}"> steps to go down at once (omitted implies up-value)</dd>
+<dd><input class="short" id="central-share" type="number" name="props-central" value="{{ props_central }}"> share resets to base tone</dd>
+<dd><input class="short" id="offset" type="number" name="props-offset" value="{{ props_offset }}"> melody cycle offset</dd>
 <dt><label for="dec-melody">Melody number</label></dt>
-<dd><input type="number" id="dec-melody" name="decimal_melody" value="{{ decimal_melody }}"></dd>
+<dd><input type="number" id="dec-melody" name="decimal-melody" value="{{ decimal_melody }}"></dd>
 </dl>
 </tr>
 <button>Sompyler code</button>
