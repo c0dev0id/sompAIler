@@ -52,7 +52,7 @@ def intdigester(intgr, div):
         rems.insert(0, remainder)
     return rems
 
-def melody_from_nary(intgr, up, down=None, central_share=0, offset=0):
+def melody_from_nary(intgr, up, down=None, central_share=0):
     if down is None:
         down = up
     rems = intdigester(intgr, down + up + central_share + 1)
@@ -68,7 +68,7 @@ def melody_from_nary(intgr, up, down=None, central_share=0, offset=0):
         )
     return melodybits
 
-def from_trinary(intgr, segmentlen=None, melody=None, up=None, down=None, central=None, offset=None):
+def from_trinary(intgr, segmentlen=None, melody=None, up=None, down=None, central=None, cycle_offset=None):
     rems = intdigester(intgr, 3)
     last = '3'
     offset = 0
@@ -138,11 +138,11 @@ def from_trinary(intgr, segmentlen=None, melody=None, up=None, down=None, centra
             if down is not None:
                 down = int(down)
             central = int(m.group(3) or 0) 
-            offset = int(m.group(4) or 0)
+            cycle_offset = int(m.group(4) or 0)
         c = cycle(melody_from_nary(
-            int(intgr), up, down, central, offset)
+            int(melody or intgr), up, down, central)
         )
-        for _ in range(offset): next(c)
+        for _ in range(cycle_offset): next(c)
         string = re.sub(r'(?<=o)', lambda m: next(c), string)
     return re.sub(r'([.+_-])\1{2,}',
         lambda m: m.group(1) + str(len(m.group(0))), string
