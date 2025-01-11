@@ -270,7 +270,11 @@ def create_app(test_config=None):
             elif melody:
                 return 400, "Melody number not interpretable without props"
             output = from_trinary(
-                int(decimal), request.form.get("segmentlen"),
+                int(decimal), (
+                    request.form.get("segmentlen"),
+                    request.form.get("chainlen", 0),
+                    request.form.get("measurelen", 0)
+                ),
                 melody=melody, **props
             )
         else:
@@ -278,7 +282,11 @@ def create_app(test_config=None):
 
         return render_template("sompyler-code-from-trinary.tmpl",
             current_value=request.form.get("decimal-rhythm", ""),
-            segmentlen=request.form.get("segmentlen"),
+            segmentlen=(
+                request.form.get("segmentlen", 0),
+                request.form.get("chainlen", 0),
+                request.form.get("measurelen", 0)
+            ),
             props_up=props.get('up'), props_down=props.get('down'),
             props_central=props.get('central'),
             props_offset=props.get('cycle_offset'),

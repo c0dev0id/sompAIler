@@ -106,23 +106,45 @@ def from_trinary(intgr, segmentlen=None, melody=None, up=None, down=None, centra
         translated.append(f"{pause}{ext}")
     string = "".join(translated)
     if segmentlen:
-        segmentlen = int(segmentlen)
+        if isinstance(segmentlen, tuple):
+            if len(segmentlen) > 2:
+                segmentlen, chainlen, measurelen = (int(s) for s in segmentlen)
+            elif len(segmentlen) == 2:
+                segmentlen = int(segmentlen[0])
+                chainlen = int(segmentlen[1])
+                measurelen = 0
+        else:
+            segmentlen = int(segmentlen)
+            chainlen = 0
+            measurelen = 0
         lencounter = 0
+        chainsegs = 0
+        measuresegs = 0
+        if chainlen == 0 and segmentlen:
+            chainlen = 1
         next_space = False
         def segment_sep(m):
-            nonlocal lencounter, next_space
+            nonlocal lencounter, chainsegs, measuresegs, next_space
             lencounter += len(m.group(0))
             space = " " if next_space else ""
-            if lencounter >= segmentlen:
+            if chainlen and chainsegs >= chainlen:
+                chainsegs %= chainlen
+                measuresegs += 1
+                space = ", "
+            if measurelen and measuresegs >= measurelen:
+                measuresegs = 0
+                space = " | " + f".{segmentlen*chainlen}, " * chainsegs
+            if segmentlen and lencounter >= segmentlen:
                 next_space = True
-                lencounter %= segmentlen
+                times, lencounter = divmod(lencounter, segmentlen)
+                chainsegs += times
             else:
                 next_space = False
             return space + m.group(0)
-        string = re.sub(r"\.|o_*", segment_sep, string)
         segmentlen -= lencounter
         if segmentlen > 0:
             string = string + (" " if next_space else "") + segmentlen * "."
+        string = re.sub(r"\.|o_*", segment_sep, string)
     if melody or up or down:
         if ':' in melody:
             props, intgr = melody.split(':')
@@ -143,7 +165,22 @@ def from_trinary(intgr, segmentlen=None, melody=None, up=None, down=None, centra
             int(melody or intgr), up, down, central)
         )
         for _ in range(cycle_offset): next(c)
-        string = re.sub(r'(?<=o)', lambda m: next(c), string)
+        melody_diff = 0
+        def get_next(m):
+            nonlocal melody_diff
+            if m.group(0) != 'o': return f'{melody_diff:+d} '
+            mel = next(c)
+            if not len(mel): return mel
+            if mel[0] == '=':
+                melody_diff = 0
+            elif mel[0] == '+':
+                melody_diff += mel.count('+')
+            elif mel[0] == '-':
+                melody_diff -= mel.count('-')
+            else:
+                raise RuntimeError("note diff not in =, + or -")
+            return mel
+        string = re.sub(r'o|[\|,] ', lambda m: m.group(0) + get_next(m), string)
     return re.sub(r'([.+_-])\1{2,}',
         lambda m: m.group(1) + str(len(m.group(0))), string
     )
