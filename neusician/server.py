@@ -251,7 +251,7 @@ def create_app(test_config=None):
                 limits=app.config.get("SOMPYLER_LIMITS").split(":")
             )
 
-    @app.route('/chain-from-numbers', methods=('GET','POST'))
+    @app.route('/chainfromnumbers', methods=('GET','POST'))
     def chain_from_numbers():
         if "decimal-melody" in request.form:
             melody = request.form.get("decimal-melody")
