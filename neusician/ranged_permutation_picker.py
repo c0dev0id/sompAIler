@@ -2,7 +2,7 @@
 from collections import Counter
 from math import factorial
 
-def share(items, total, min_number=0, max_number=None):
+def share(items, total, min_number=0, max_number=None, least_rest=0):
     """ Distribute numbers in min_number<=x<=max_number
         so that they sum up to total and are sorted in
         ascending order. Items indicates how many items
@@ -39,15 +39,26 @@ def share(items, total, min_number=0, max_number=None):
             f"because each may not exceed maximum {max_number}."
         )
 
+    if items > least_rest > -1:
+        rest_factor = [-1] * least_rest + [1] * (items-least_rest)
+        print(rest_factor)
+    else:
+        raise ValueError(
+            f"{items=} must be greater than {least_rest=}, "
+            f"should be much greater indeed."
+        )
+
     def _recursor(i=items, t=total, m=min_number):
 
+        rf = rest_factor[ (items-i) % items]
+
         if i == 1:
-            if t <= (max_number or t): yield (t,)
+            if t <= (max_number or t): yield (rf*t,)
             return
 
         while m*2 <= t:
             for x in _recursor(i-1, t-m, m):
-                yield (m,) + x
+                yield (rf*m,) + x
             m += 1
 
     yield from _recursor()
@@ -55,14 +66,14 @@ def share(items, total, min_number=0, max_number=None):
 
 class RangedPermutationPicker:
 
-    def __init__(self, items, total, minimum=0, maximum=None):
+    def __init__(self, items, total, minimum=0, maximum=None, least_rest=0):
         self.items = items
         self.total = total
         self.minimum = minimum
         self.maximum = maximum
         self.sets = []
         permutations = 0
-        for s in share(items, total, minimum, maximum):
+        for s in share(items, total, minimum, maximum, least_rest):
             s = SequencePicker(s)
             permutations += s.permutations
             self.sets.append(s)
@@ -87,10 +98,11 @@ class RangedPermutationPicker:
 class SequencePicker():
     def __init__(self, orig_sequence):
         self.counter = Counter(orig_sequence)
+        abs_counter = Counter(abs(v) for v in orig_sequence)
         reps = 1
-        for v in self.counter.values():
+        for v in abs_counter.values():
             reps *= factorial(v)
-        self.permutations = factorial(self.counter.total()) // reps
+        self.permutations = factorial(abs_counter.total()) // reps
 
     def sequence_at_index(self, index):
         counter = self.counter.copy()

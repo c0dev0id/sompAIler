@@ -63,6 +63,17 @@ def rhythmelcode_picker(spec):
     else:
         raise ValueError("No first zero to mark where melody starts")
 
+    for r in rhythm:
+        # -n: n Ticks Pause
+        # n: 1 Ton der Länge n
+        # m(nnn...) oder m(x:...):
+        #    vier Töne der mglw. unterschiedlichen Längen n,
+        #    Gesamtlänge x, verhältnismäßig skaliert auf Länge n, oder
+        #    Gesamtlänge n, durch die die Summe der Teillängen teilbar
+        #    ist, oder umgekehrt ist n teilbar durch die Summe der Teil-
+        #    längen.
+        ...
+
     sign = 1
     cons_melody = []
     for m in melody:
@@ -92,7 +103,7 @@ def get_rhythm(*rpp_args):
     index = getter.send(rpp.permutations)
     return rpp.sequence_at_index(index)
 
-def get_melody(length, pause_prob, shift_to_base_prob, upper_probs, lower_probs):
+def get_melody(length, shift_to_base_prob, upper_probs, lower_probs):
 
     tones = [ x for (x,) in markov_adv[0][0].keys() ]
 
@@ -109,11 +120,8 @@ def get_melody(length, pause_prob, shift_to_base_prob, upper_probs, lower_probs)
     TMP_SCALE = lower_probs + upper_probs
     melody = []
     while len(melody) < length:
-        kind = getter.send(pause_prob+shift_to_base_prob+TMP_HEIGHT)
-        if pause_prob > kind:
-            melody.append(None)
-            continue
-        elif pause_prob + shift_to_base_prob > kind:
+        kind = getter.send(shift_to_base_prob+TMP_HEIGHT)
+        if shift_to_base_prob > kind:
             melody.append("=")
             continue
         tone = next(markov_adv[1])
@@ -147,7 +155,7 @@ def get_both(melody, rhythm, offset, span, articles='o', modifiers=None):
         for ticks in (offset, until_excl):
             total = 0
             for i, length in enumerate(rhythm):
-                if ticks < total + length:
+                if ticks < total + abs(length):
                     break
                 total += length
             new.append((i, ticks-total))
@@ -166,8 +174,8 @@ def get_both(melody, rhythm, offset, span, articles='o', modifiers=None):
     aggregation = []
     pause = 0
     for r, m in zip(rhythm, melody):
-        if m is None:
-            pause += r
+        if r < 0:
+            pause -= r
             continue
         else:
             aggregation.append((pause, m, r))
@@ -372,6 +380,7 @@ allowed = {
     'vl': voiceline,
     'mel': melody_cycler,
     'rh': rhythm_cycler,
+    'rhm': rhythmelcode_picker,
     'n': number_picker,
     '__builtins__': {}
 }
@@ -388,7 +397,7 @@ def expand_line(s):
             d['func'] = 'rh'
             d['args'] = d.pop('rh')
         elif d['func'] is None:
-            d['func'] = 'vl'
+            d['func'] = 'rhm' if d['args'].startswith("!") else 'vl'
 
         d['args'] = re.sub(r"^(?![\"']|-?\d+,)([^,]+)", r'"\1"', d['args'])
         d['args'] = re.sub(r">([a-z]\w*)", r', save="\1"', d['args'])
@@ -426,7 +435,7 @@ def expand_line(s):
       )
       (?:
          (?: \?(?P<func>\w+))?
-         \( (?(func)|(?=\d+,|['"?])) (?P<args>[^;)]+) \)
+         \( (?(func)|(?=\d+,|['"?!])) (?P<args>[^;)]+) \)
        | \[          (?=\d+,|['"?])  (?P<mel>[^;\]]+) \]
        | \{          (?=\d+,|['"?])  (?P<rh>[^;}]+)   \}
       )
