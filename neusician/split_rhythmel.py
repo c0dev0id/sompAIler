@@ -44,6 +44,54 @@ def deserialize(pattern):
     
         return stack[0]
 
+def get_segment_separator(segmentlen, chainlen=0, measurelen=0, offset=0):
+
+    lencounter = 0
+    chainsegs = 0
+    measuresegs = 0
+
+    if chainlen == 0 and measurelen:
+        chainlen = 1
+
+    next_space = False
+
+    def segment_sep(m=None):
+        nonlocal lencounter, chainsegs, measuresegs, next_space
+        if m is None:
+            nonlocal segmentlen
+            segmentlen -= lencounter
+            if segmentlen > 0:
+                return (" " if next_space else "") + segmentlen * "."
+            else: return ""
+        try:
+            lencounter += len(match := m.group(0))
+        except AttributeError:
+            lencounter += m
+            match = ""
+        space = " " if next_space else ""
+        if chainlen and chainsegs >= chainlen:
+            times, chainsegs = divmod(chainsegs, chainlen)
+            measuresegs += times
+            if space: space = ", "
+        if measurelen and measuresegs >= measurelen:
+            measuresegs = 0
+            if space: space = " | " + f".{segmentlen*chainlen}, " * chainsegs
+        if segmentlen and lencounter >= segmentlen:
+            if match: next_space = True
+            times, lencounter = divmod(lencounter, segmentlen)
+            chainsegs += times
+        else:
+            next_space = False
+        return space + match
+
+    if offset:
+        if offset < 0:
+            offset %= segmentlen * chainlen * measurelen
+        segment_sep(offset)
+
+    return segment_sep
+
+
 def intdigester(intgr, div):
     x = intgr
     rems = []
@@ -68,7 +116,10 @@ def melody_from_nary(intgr, up, down=None, central_share=0):
         )
     return melodybits
 
-def from_trinary(intgr, segmentlen=None, melody=None, up=None, down=None, central=None, cycle_offset=None):
+def from_trinary(
+        intgr, segmentlen=None, melody=None, up=None, down=None,
+        central=None, cycle_offset=None, tick_offset=0
+    ):
     rems = intdigester(intgr, 3)
     last = '3'
     offset = 0
@@ -117,34 +168,8 @@ def from_trinary(intgr, segmentlen=None, melody=None, up=None, down=None, centra
             segmentlen = int(segmentlen)
             chainlen = 0
             measurelen = 0
-        lencounter = 0
-        chainsegs = 0
-        measuresegs = 0
-        if chainlen == 0 and segmentlen:
-            chainlen = 1
-        next_space = False
-        def segment_sep(m):
-            nonlocal lencounter, chainsegs, measuresegs, next_space
-            lencounter += len(m.group(0))
-            space = " " if next_space else ""
-            if chainlen and chainsegs >= chainlen:
-                chainsegs %= chainlen
-                measuresegs += 1
-                space = ", "
-            if measurelen and measuresegs >= measurelen:
-                measuresegs = 0
-                space = " | " + f".{segmentlen*chainlen}, " * chainsegs
-            if segmentlen and lencounter >= segmentlen:
-                next_space = True
-                times, lencounter = divmod(lencounter, segmentlen)
-                chainsegs += times
-            else:
-                next_space = False
-            return space + m.group(0)
-        segmentlen -= lencounter
-        if segmentlen > 0:
-            string = string + (" " if next_space else "") + segmentlen * "."
-        string = re.sub(r"\.|o_*", segment_sep, string)
+        segment_sep = get_segment_separator(segmentlen, chainlen, measurelen, tick_offset)
+        string = re.sub(r"\.|o_*", segment_sep, string) + segment_sep()
     if melody or up or down:
         if ':' in melody:
             props, intgr = melody.split(':')

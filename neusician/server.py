@@ -266,6 +266,7 @@ def create_app(test_config=None):
                     'down': int(request.form.get("props-down") or 0),
                     'central': int(request.form.get("props-central") or 0),
                     'cycle_offset': int(request.form.get("props-offset") or 0),
+                    'tick_offset': int(request.form.get("tick-offset") or 0),
                 }
             elif melody:
                 return 400, "Melody number not interpretable without props"
@@ -290,6 +291,7 @@ def create_app(test_config=None):
             props_up=props.get('up'), props_down=props.get('down'),
             props_central=props.get('central'),
             props_offset=props.get('cycle_offset'),
+            tick_offset=props.get('tick_offset'),
             decimal_melody=request.form.get("decimal-melody", ""),
             output_code=output
         )

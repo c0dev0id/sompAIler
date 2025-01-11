@@ -16,10 +16,12 @@
 <dl>
 <dt><label for="dec-rhythm">Rhythm number</label></dt>
 <dd><input type="number" id="dec-rhythm" name="decimal-rhythm" value="{{ current_value }}"></dd>
-<dt><label for="segments">segments</label></dt>
-<dd><input class="short" id="segments" type="number" min="0" name="segmentlen" value="{{ segmentlen[0] }}">
-<input class="short" type="number" name="chainlen" min="0" value="{{ segmentlen[1] }}">
-<input class="short" type="number" name="measurelen" min="0" value="{{ segmentlen[2] }}">
+<dt><label for="segments">segment length</label></dt>
+<dd>
+<input class="short" id="segments" type="number" min="0" name="segmentlen" value="{{ segmentlen[0] }}">
+<input class="short" type="number" placeholder="chain length in segments" name="chainlen" min="0" value="{{ segmentlen[1] }}">
+<input class="short" type="number" placeholder="measure length in chains" name="measurelen" min="0" value="{{ segmentlen[2] }}">
+<input class="short" type="number" placeholder="offset" name="tick-offset" value="{{ tick_offset }}">
 </dd>
 <dt><label for="mel-props">Properties</label></dt>
 <dd><input class="short" id="mel-props-up" type="number" name="props-up" value="{{ props_up }}"> steps to go up at once</dd>
