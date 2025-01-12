@@ -100,10 +100,10 @@ def intdigester(intgr, div):
         rems.insert(0, remainder)
     return rems
 
-def melody_from_nary(intgr, up, down=None, central_share=0):
+def melody_from_nary(intgr, up, base=0, down=None, central_share=0):
     if down is None:
         down = up
-    rems = intdigester(intgr, down + up + central_share + 1)
+    rems = intdigester(intgr, down + up + central_share + base)
     melodybits = []
     for r in rems:
         r -= central_share
@@ -112,13 +112,15 @@ def melody_from_nary(intgr, up, down=None, central_share=0):
             continue
         r -= down
         melodybits.append(
-            '' if r == 0 else r * '+' if r > 0 else abs(r) * '-'
+                       '' if base >= r >= 0 else
+           (r-base) * '+' if r > 0 else
+             abs(r) * '-'
         )
     return melodybits
 
 def from_trinary(
-        intgr, segmentlen=None, melody=None, up=None, down=None,
-        central=None, cycle_offset=None, tick_offset=0
+        intgr, segmentlen=None, melody=None, base=None, up=None, down=None,
+        central=None, cycle_offset=0, tick_offset=0
     ):
     rems = intdigester(intgr, 3)
     last = '3'
@@ -156,8 +158,8 @@ def from_trinary(
             ext = 'o' + ext * '_'
         translated.append(f"{pause}{ext}")
     string = "".join(translated)
-    if segmentlen:
-        if isinstance(segmentlen, tuple):
+    if segmentlen is not None:
+        if isinstance(segmentlen, (tuple, list, str)):
             if len(segmentlen) > 2:
                 segmentlen, chainlen, measurelen = (int(s) for s in segmentlen)
             elif len(segmentlen) == 2:
@@ -168,10 +170,11 @@ def from_trinary(
             segmentlen = int(segmentlen)
             chainlen = 0
             measurelen = 0
-        segment_sep = get_segment_separator(segmentlen, chainlen, measurelen, tick_offset)
-        string = re.sub(r"\.|o_*", segment_sep, string) + segment_sep()
+        if segmentlen > 0:
+            segment_sep = get_segment_separator(segmentlen, chainlen, measurelen, tick_offset)
+            string = re.sub(r"\.|o_*", segment_sep, string) + segment_sep()
     if melody or up or down:
-        if ':' in melody:
+        if isinstance(melody, str) and ':' in melody:
             props, intgr = melody.split(':')
         else:
             props = None
@@ -187,7 +190,7 @@ def from_trinary(
             central = int(m.group(3) or 0) 
             cycle_offset = int(m.group(4) or 0)
         c = cycle(melody_from_nary(
-            int(melody or intgr), up, down, central)
+            int(melody or intgr), up, base, down, central)
         )
         for _ in range(cycle_offset): next(c)
         melody_diff = 0
