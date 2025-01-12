@@ -4,6 +4,7 @@ from .input_error import last_lines, ScorePreprocessingError
 from .arbitextonotes import seedphrase_to_bigint
 from .markov_util import markov_sensible_tone_getter
 from .ranged_permutation_picker import RangedPermutationPicker
+from .split_rhythmel import from_trinary
 
 def randomint_getter(big_number):
 
@@ -55,48 +56,25 @@ def voiceline(length, height, melody_share=1, pause_share=1, depth=0):
     return ''.join(ret)
 
 
-def rhythmelcode_picker(spec):
-    spec = re.sub(r"(?=[^\d()])|(?<=\d)", " ", spec).split()
-    if '0' in spec:
-        i = spec.index('0')
-        rhythm, melody = spec[0:i], spec[i+1:]
+def rhythmelcode_picker(spec, segmentlen, **params):
+    specs = []; last_pos = 0
+    while (m := re.match(r"!(\d+)([+-]\d+)?", spec[last_pos:])):
+        if m.start() > last_pos:
+            raise ScorePreprocessingError("rhythmelcode chokes upon gap: " + spec[last_pos:m.start()])
+        specs.append(int(m.group(1)) + getter.send(int(m.group(2) or 0)))
+        last_pos = m.end()
+    if len(specs) == 1:
+        rhythm = specs.pop()
     else:
-        raise ValueError("No first zero to mark where melody starts")
-
-    for r in rhythm:
-        # -n: n Ticks Pause
-        # n: 1 Ton der Länge n
-        # m(nnn...) oder m(x:...):
-        #    vier Töne der mglw. unterschiedlichen Längen n,
-        #    Gesamtlänge x, verhältnismäßig skaliert auf Länge n, oder
-        #    Gesamtlänge n, durch die die Summe der Teillängen teilbar
-        #    ist, oder umgekehrt ist n teilbar durch die Summe der Teil-
-        #    längen.
-        ...
-
-    sign = 1
-    cons_melody = []
-    for m in melody:
-        if m[0] == '+':
-            if sign == 1:
-                cons_melody.append('R')
-                continue
-            else:
-                sign = 1
-            m = m[1:]
-        elif m[0] == '-':
-            if sign == -1:
-                cons_melody.append('R')
-                continue
-            else:
-                sign = -1
-            m = m[1:]
-
-        if m.isdecimal():
-            cons_melody.append(sign * int(m))
-        else:
-            raise ValueError(f"{m} is not decimal")
-
+        rhythm, melody = specs[:2]
+        params["melody"] = melody
+        specs = specs[2:]
+    if len(specs):
+        for prop, val in zip(("up", "base", "down", "central", ""), specs): 
+            params[prop] = val
+        if prop == '':
+            raise ScorePreprocessingError("rhythmelcode chokes on too many exclamation marked values")
+    return from_trinary(rhythm, segmentlen, **params)
 
 def get_rhythm(*rpp_args):
     rpp = RangedPermutationPicker(*rpp_args)
@@ -467,7 +445,7 @@ def preprocess(infileobj=None):
             if ':' in endmarker:
                 endmarker, markov_tail = endmarker.split(':')
             else:
-                markov_spec = open("markov_default.txt").read()
+                markov_spec = open("neusician/markov_default.txt").read()
             slurp_mode = True
             arbitext.clear()
             continue
