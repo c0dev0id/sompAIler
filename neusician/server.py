@@ -389,6 +389,7 @@ def create_app(test_config=None):
 
     @auth.login_required
     @app.route('/publish', methods=('GET'), endpoint='publisher')
+    def publish():
         path = procman.worker_directory_of_user(auth.current_user(), "result.mp3")
         if os.path.exists(path):
             wdir = path.rsplit("/", 1)[0]
