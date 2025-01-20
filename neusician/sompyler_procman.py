@@ -10,6 +10,7 @@ STD_RESOURCES = 10**9
 SOMPYLER = None
 SOMPYLER_LIMITS = None
 SUBDIR="neusician"
+EXT_PUBLISH_CMD=""
 TMPDIR=os.environ.get("TMPDIR", "/tmp")
 
 class NoWorkersAvailableError(RuntimeError):
@@ -338,6 +339,29 @@ def analyze_tone(user, tone_number, what_to_return):
         con.commit()
 
     return stdout["file"]
+
+
+def publish_tarfile(user, title=""):
+    from tarfile import TarFile
+    cmd = EXT_PUBLISH_COMMAND.split()
+    cmd.append(title)
+    cmd.append(user)
+    url=''
+    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=StringIO(url))
+    wdir = worker_directory_of_user(user)
+    try:
+        tf = TarFile.open(p.stdin, mode="w")
+        tf.add(os.path.join(wdir, "result.mp3"), "result.mp3")
+        tf.add(os.path.join(wdir, "score"), "score.spls.txt")
+        tf.add(os.path.join(wdir, "OUT.log"), "notes.txt")
+        tf.close()
+    finally:
+        p.stdin.close()
+        p.wait()
+    if (m := re.search(r'https?:\S+', url)):
+        return m.group(0)
+    else:
+        raise RuntimeError("No url found in output of publish")
 
 def waiting_stats_for_user(user):
     c = _get_cursor()

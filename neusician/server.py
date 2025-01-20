@@ -321,7 +321,7 @@ def create_app(test_config=None):
             if "yamlcode" in request.form:
                 yamlcode = indenter(request.form["yamlcode"])
                 if request.form["action"] == 'delete':
-                    if next(yamlcode, None) is None:
+                    if not next(yamlcode, None):
                         procman.delete_user_and_files(user)
                         return "Your session is erased.", 410
                     else:
@@ -387,6 +387,23 @@ def create_app(test_config=None):
                 interesting_files=_file_it()
             )
 
+    @auth.login_required
+    @app.route('/publish', methods=('GET'), endpoint='publisher')
+        path = procman.worker_directory_of_user(auth.current_user(), "result.mp3")
+        if os.path.exists(path):
+            wdir = path.rsplit("/", 1)[0]
+            for line in open(f"{wdir}/score.spls.txt"):
+                if line.startswith("title: "):
+                    title = line[7:].rstrip()
+                    break
+                elif line.isspace() or not line:
+                    title = "No title"
+                    break
+            url = procman.publish_tarfile(auth.current_user(), title)
+            return redirect(url, url=303)
+        else:
+            return 404, "rendered mp3 does not exist"
+
     @app.route("/files/<idir>/<path:ifile>")
     def view_interesting_file(idir, ifile):
         if not (idir in ('lib', 'scores')
@@ -410,6 +427,7 @@ def create_app(test_config=None):
         return render_template(
             "sompyler-status-report.tmpl",
             yamlcode=open(score_file).read(),
+            publish="EXT_PUBLISH_CMD" in app.config,
             user=user,
             quota=quota(user),   
             **status
