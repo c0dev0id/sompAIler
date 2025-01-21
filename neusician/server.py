@@ -69,6 +69,7 @@ def create_app(test_config=None):
 
     procman.TMPDIR = app.config["TMPDIR"]
     procman.SOMPYLER = app.config["SOMPYLER"]
+    procman.EXT_PUBLISH_CMD = app.config.get("EXT_PUBLISH_CMD")
     limits = app.config.get("SOMPYLER_LIMITS")
 
     if limits:
@@ -387,14 +388,26 @@ def create_app(test_config=None):
                 interesting_files=_file_it()
             )
 
+    @app.route('/publish', methods=('GET',), endpoint='publisher')
     @auth.login_required
-    @app.route('/publish', methods=('GET'), endpoint='publisher')
     def publish():
-        path = procman.worker_directory_of_user(auth.current_user(), "result.mp3")
+        user = auth.current_user()
+        path = os.path.join(
+              procman.TMPDIR, "OUT", f"{user}.mp3"
+            )
+        title = None
         if os.path.exists(path):
-            wdir = path.rsplit("/", 1)[0]
-            for line in open(f"{wdir}/score.spls.txt"):
-                if line.startswith("title: "):
+            for line in open(
+                    procman.worker_directory_of_user(user, "score"), "r"
+                ):
+                if line == "title:\n":
+                    title = ''
+                elif title is not None:
+                    if line.isspace(): break
+                    if line[0].isspace():
+                        title = title + " " + line.strip()
+                    else: break
+                elif line.startswith("title: "):
                     title = line[7:].rstrip()
                     break
                 elif line.isspace() or not line:
@@ -403,7 +416,7 @@ def create_app(test_config=None):
             url = procman.publish_tarfile(auth.current_user(), title)
             return redirect(url, url=303)
         else:
-            return 404, "rendered mp3 does not exist"
+            return "rendered mp3 does not exist", 404
 
     @app.route("/files/<idir>/<path:ifile>")
     def view_interesting_file(idir, ifile):

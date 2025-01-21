@@ -30,7 +30,7 @@
 
 <p>Please download the file if you find it worth that.</p>
 {% if publish %}
-<form method="{{ url_for 'publisher' }}">Or <button name="action" value="publish">publish</button>.</form>
+<form action="{{ url_for('publisher') }}" method="GET">Or <button>publish</button> to webserver.</form>
 {% endif %}
 
 <p>The file does not stay substantially longer on the server than the owning user can login. If an error occurs so that the file is not re-generated, and you cannot fix the score so it is, you will not be able to access it any more (it would be empty anyway). That may be because the quota of total samples rendered is exceeded, for instance.</p>

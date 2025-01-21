@@ -1,7 +1,7 @@
 import os, subprocess, re
 from io import StringIO
 from glob import glob
-import sqlite3, json
+import sqlite3, json, tempfile
 
 con = None
 con_path = None
@@ -116,6 +116,9 @@ def user_is_authenticated(name):
 
 
 def worker_directory_of_user(name, *path):
+
+    if name is None:
+        raise RuntimeError('name is None')
 
     c = _get_cursor()
     try:
@@ -343,22 +346,22 @@ def analyze_tone(user, tone_number, what_to_return):
 
 def publish_tarfile(user, title=""):
     from tarfile import TarFile
-    cmd = EXT_PUBLISH_COMMAND.split()
+    cmd = EXT_PUBLISH_CMD.split()
     cmd.append(title)
     cmd.append(user)
-    url=''
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=StringIO(url))
+    tmptar = tempfile.NamedTemporaryFile()
+    p = subprocess.Popen(cmd, stdin=tmptar, stdout=tempfile.TemporaryFile())
     wdir = worker_directory_of_user(user)
     try:
-        tf = TarFile.open(p.stdin, mode="w")
-        tf.add(os.path.join(wdir, "result.mp3"), "result.mp3")
+        tf = TarFile.open(tmptar.name, mode="w")
+        tf.add(os.path.join(wdir, f"../OUT/{user}.mp3"), "result.mp3")
         tf.add(os.path.join(wdir, "score"), "score.spls.txt")
         tf.add(os.path.join(wdir, "OUT.log"), "notes.txt")
         tf.close()
     finally:
-        p.stdin.close()
+        tmptar.close()
         p.wait()
-    if (m := re.search(r'https?:\S+', url)):
+    if (m := re.search(r'https?:\S+', p.stdout.read())):
         return m.group(0)
     else:
         raise RuntimeError("No url found in output of publish")
