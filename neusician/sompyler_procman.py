@@ -347,24 +347,37 @@ def analyze_tone(user, tone_number, what_to_return):
 def publish_tarfile(user, title=""):
     from tarfile import TarFile
     cmd = EXT_PUBLISH_CMD.split()
-    cmd.append(title)
+    cmd.append(f'"{title}"')
     cmd.append(user)
-    tmptar = tempfile.NamedTemporaryFile()
-    p = subprocess.Popen(cmd, stdin=tmptar, stdout=tempfile.TemporaryFile())
+    tmptar = tempfile.NamedTemporaryFile(
+        prefix='neusician-publish-tarball-',
+        suffix='tar'
+    )
+    tmpout = tempfile.NamedTemporaryFile(
+        prefix='neusician-publish-stdout-',
+        suffix='txt'
+    )
     wdir = worker_directory_of_user(user)
+    p = None
     try:
         tf = TarFile.open(tmptar.name, mode="w")
         tf.add(os.path.join(wdir, f"../OUT/{user}.mp3"), "result.mp3")
         tf.add(os.path.join(wdir, "score"), "score.spls.txt")
         tf.add(os.path.join(wdir, "OUT.log"), "notes.txt")
         tf.close()
+        raise RuntimeError(cmd)
+        out = tempfile.TemporaryFile('w+')
+        p = subprocess.Popen(cmd, stdin=tmptar, stdout=out)
     finally:
         tmptar.close()
-        p.wait()
-    if (m := re.search(r'https?:\S+', p.stdout.read())):
-        return m.group(0)
-    else:
-        raise RuntimeError("No url found in output of publish")
+        if p: p.wait()
+    try:
+        if (m := re.search(r'https?:\S+', out.read())):
+            return m.group(0)
+        else:
+            raise RuntimeError("No url found in output of publish")
+    finally:
+        out.close()
 
 def waiting_stats_for_user(user):
     c = _get_cursor()
