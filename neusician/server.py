@@ -388,7 +388,7 @@ def create_app(test_config=None):
                 interesting_files=_file_it()
             )
 
-    @app.route('/publish', methods=('GET',), endpoint='publisher')
+    @app.route('/sompyle/publish', methods=('GET',), endpoint='publisher')
     @auth.login_required
     def publish():
         user = auth.current_user()
