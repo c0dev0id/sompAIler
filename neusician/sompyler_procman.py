@@ -365,7 +365,6 @@ def publish_tarfile(user, title=""):
         tf.add(os.path.join(wdir, "score"), "score.spls.txt")
         tf.add(os.path.join(wdir, "OUT.log"), "notes.txt")
         tf.close()
-        raise RuntimeError(cmd)
         out = tempfile.TemporaryFile('w+')
         p = subprocess.Popen(cmd, stdin=tmptar, stdout=out)
     finally:
