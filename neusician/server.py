@@ -395,7 +395,7 @@ def create_app(test_config=None):
         path = os.path.join(
               procman.TMPDIR, "OUT", f"{user}.mp3"
             )
-        title = None
+        title = request.args.get("title")
         if os.path.exists(path):
             for line in open(
                     procman.worker_directory_of_user(user, "score"), "r"
@@ -405,16 +405,17 @@ def create_app(test_config=None):
                 elif title is not None:
                     if line.isspace(): break
                     if line[0].isspace():
-                        title = title + " " + line.strip()
+                        title = " ".join([title, line.strip()])
                     else: break
                 elif line.startswith("title: "):
                     title = line[7:].rstrip()
                     break
                 elif line.isspace() or not line:
-                    title = "No title"
                     break
-            url = procman.publish_tarfile(auth.current_user(), title)
-            return redirect(url, url=303)
+            url = procman.publish_tarfile(
+                    auth.current_user(), title or "No title"
+                )
+            return redirect(url, code=303)
         else:
             return "rendered mp3 does not exist", 404
 

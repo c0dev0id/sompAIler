@@ -351,11 +351,12 @@ def publish_tarfile(user, title=""):
     cmd.append(user)
     tmptar = tempfile.NamedTemporaryFile(
         prefix='neusician-publish-tarball-',
-        suffix='tar'
+        suffix='.tar'
     )
     tmpout = tempfile.NamedTemporaryFile(
         prefix='neusician-publish-stdout-',
-        suffix='txt'
+        mode="w+",
+        suffix='.txt'
     )
     wdir = worker_directory_of_user(user)
     p = None
@@ -365,18 +366,16 @@ def publish_tarfile(user, title=""):
         tf.add(os.path.join(wdir, "score"), "score.spls.txt")
         tf.add(os.path.join(wdir, "OUT.log"), "notes.txt")
         tf.close()
-        out = tempfile.TemporaryFile('w+')
-        p = subprocess.Popen(cmd, stdin=tmptar, stdout=out)
+        p = subprocess.Popen(cmd, stdin=tmptar, stdout=tmpout)
     finally:
         tmptar.close()
         if p: p.wait()
-    try:
-        if (m := re.search(r'https?:\S+', out.read())):
-            return m.group(0)
-        else:
-            raise RuntimeError("No url found in output of publish")
-    finally:
-        out.close()
+    tmpout.seek(0)
+    if (m := re.search(r'https?:\S+', tmpout.read())):
+        return m.group(0)
+    else:
+        raise RuntimeError("No url found in output of publish")
+    tmpout.close()
 
 def waiting_stats_for_user(user):
     c = _get_cursor()

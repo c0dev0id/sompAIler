@@ -29,9 +29,17 @@
 </audio><input id="loopswitch" type="checkbox" onclick="this.previousElementSibling.loop = this.checked"><label for="loopswitch"> loop</label>
 
 <p>Please download the file if you find it worth that.</p>
+
+<h2>Further functions</h2>
+
+<ul>
 {% if publish %}
-<form action="{{ url_for('publisher') }}" method="GET">Or <button>publish</button> to webserver.</form>
+<li><form action="{{ url_for('publisher') }}" method="GET"><button>Publish</button> to webserver under title <input placeholder="(leave blank if in score header)" name="title">.</form>
 {% endif %}
+{% if midi %}
+<li><form action="{{ url_for('midiexport') }}" method="GET">Or map voices and channel properties <input placeholder="General MIDI program numbers" name="channelprops"> and <button>export midi</button>.</form>
+{% endif %}
+</ul>
 
 <p>The file does not stay substantially longer on the server than the owning user can login. If an error occurs so that the file is not re-generated, and you cannot fix the score so it is, you will not be able to access it any more (it would be empty anyway). That may be because the quota of total samples rendered is exceeded, for instance.</p>
 
