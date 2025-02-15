@@ -203,6 +203,13 @@ def create_app(test_config=None):
         return _v
     auth.verify_password(get_password_verifier())
 
+    @app.route('/logout-user')
+    @auth.login_required
+    def logout_user():
+        user = auth.current_user()
+        procman.logout_user(user)
+        return redirect(url_for('private-yaml-acceptor'), code=303)
+
     @app.route('/change-password', methods=("GET", "POST"))
     @auth.login_required
     def change_password():
@@ -462,9 +469,11 @@ def create_app(test_config=None):
     @app.route("/sompyle/analyze")
     @auth.login_required
     def sompyler_static_code_analyzer():
-        score_file = procman.worker_directory_of_user(auth.current_user(), "score")
+        user = auth.current_user()
+        score_file = procman.worker_directory_of_user(user, "score")
         return render_template(
             "sompyler-code-analyzer.tmpl",
+            user=user,
             json=code_analyzer(score_file)
         )
 
@@ -515,6 +524,7 @@ def create_app(test_config=None):
     @app.route("/sompyle/analyze/tone-<int:number>")
     @auth.login_required
     def analyze_tone(number):
+        user = auth.current_user()
         proc = subprocess.run(
                 ['analyze-tone',
                     procman.worker_directory_of_user(auth.current_user()), str(number)
@@ -522,6 +532,7 @@ def create_app(test_config=None):
             )
         return render_template(
             "tone-analyzer.tmpl",
+            user=user,
             number=number,
             **json.loads(proc.stdout)
         )
@@ -552,10 +563,12 @@ def create_app(test_config=None):
             'waiting': '?',
         }
 
-        stats.update(procman.waiting_stats_for_user(auth.current_user()))
+        user = auth.current_user()
+        stats.update(procman.waiting_stats_for_user(user))
 
         return render_template(
             "service-unavailable.tmpl",
+            user=user,
             **stats
         ), 503
 

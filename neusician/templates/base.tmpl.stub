@@ -12,6 +12,9 @@
 		<header>
 			<!-- INSERT HEADER CODE HERE -->
 		</header>
+		{% if user is not none %}
+		<div class="whoiam">{{ user }} [<a href="/logout-user">Logout</a> | <a href="/change-password">Reset password</a>]</div>
+		{% endif %}
 
 		<main>
 			<h1>{{ self.title() }}</h1>

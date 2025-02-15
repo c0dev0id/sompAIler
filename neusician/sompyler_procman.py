@@ -99,12 +99,25 @@ def set_password_of_user(name, password):
 def get_hashed_password_of_user(name):
 
     c = _get_cursor()
-    try: return next(c.execute(
-            "SELECT password FROM user WHERE name = ?", (name,)
-        ))[0]
+    try:
+        rec = next(c.execute(
+            "SELECT password, last_password_match FROM user WHERE name = ?", (name,)
+        ))
+        if rec[1] is not None and rec[1].endswith(' EXPL_LOGGED_OUT'):
+            c.execute("UPDATE user SET last_password_match=? WHERE name = ?",
+                (rec[1].rsplit(' ', 1)[0], name)
+            )
+            con.commit()
+            return None
+        else:
+            return rec[0]
     except StopIteration:
         return None
 
+def logout_user(name):
+    c = _get_cursor()
+    c.execute("UPDATE user SET last_password_match=last_password_match||' EXPL_LOGGED_OUT' WHERE name=?", (name,))
+    con.commit()
 
 def user_is_authenticated(name):
 
