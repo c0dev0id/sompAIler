@@ -312,6 +312,22 @@ def get_status(user, w0mode='ff', tail_log=False, quota=100, workers=None):
         'errors': errors,
     }
 
+
+def midi_export(file_name, ppqn, voices):
+    try:
+        res = subprocess.run(
+          [ 'pre2midi', file_name, str(ppqn), voices,
+            os.path.join(os.path.dirname(file_name), "result.mid")
+          ],
+          capture_output=True, check=True
+        )
+    except subprocess.CalledProcessError as e:
+        log = open("/tmp/shell_out.log", "wb")
+        log.write(e.stderr)
+        log.close()
+        raise
+
+
 def analyze_tone(user, tone_number, what_to_return):
 
     if what_to_return == "outline":

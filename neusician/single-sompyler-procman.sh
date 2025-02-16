@@ -51,6 +51,7 @@ if [ "${IND-0}" -gt "${OUTD-0}" ]; then
 		   W0MODE='--room '$W0MODE
 		   ;;
 		midi)
+		   WORKERS_PER_USER=0
 		   W0MODE='--emit-premidi-notes-to='"${T}/premidi.txt"
 		   ;;
 		*)

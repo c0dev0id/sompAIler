@@ -353,6 +353,8 @@ def create_app(test_config=None):
             if status['frozen'] is True:
                 if "file_accomplished" in status:
                     return redirect("/sompyle/result.mp3", code=303)
+                elif request.form.get("w0mode") == "midi":
+                    return redirect("/sompyle/midi", code=303)
                 elif "errors" in status:
                     response = make_response()
                     response.data = status["errors"] + (
@@ -520,6 +522,42 @@ def create_app(test_config=None):
             mimetype="audio/mp3",
             max_age=0
         )
+
+    @app.route("/sompyle/midi", methods=('GET', 'POST'))
+    @auth.login_required
+    def midi_exporter():
+        user = auth.current_user()
+        premidi_score = procman.worker_directory_of_user(user, "premidi.txt")
+        if not os.path.exists(premidi_score):
+            return "Please render sompyler code to MIDI first", 424
+        with open(premidi_score) as ps:
+            voices = []
+            for line in ps:
+                if (m := re.match(r"# VOICE\(name=([\"'])(\w+)\1", line)):
+                    voices.append(m.group(2))
+                elif not voices: continue
+                else: break
+            else:
+                raise RuntimeError("No voices defined or notes ever played")
+            if request.method == 'GET':
+                ps.seek(0)
+                return render_template(
+                    "sompyler-midi-export.tmpl",
+                    user=user,
+                    voices=voices,
+                    premidi_score=ps.read(),
+                )
+            else:
+                voices = " ".join(
+                        request.form.get(v) for v in voices if v is not None
+                    )
+                ppqn = int(request.form.get('ppqn', 240))
+                procman.midi_export(premidi_score, ppqn, voices)
+                return send_file(
+                    procman.worker_directory_of_user(user, "result.mid"),
+                    mimetype="audio/midi",
+                    max_age=0,
+                )
 
     @app.route("/sompyle/analyze/tone-<int:number>")
     @auth.login_required
