@@ -150,6 +150,7 @@ def create_app(test_config=None):
                     return redirect(
                          f"/sompyle?yamlcode-id={random_id}", code=303
                     )
+                    scorefile.close()
                 else:
                     return jsonify(plaintones)
 
@@ -159,7 +160,9 @@ def create_app(test_config=None):
         else:
             markov = request.args.get("markov")
             if not markov:
-                markov = open("neusician/markov_default.txt").read()
+                with open("neusician/markov_default.txt") as mfh:
+                    markov = mfh.read()
+
             return render_template("random.tmpl",
                 seed_phrase=request.args.get("seedphrase", "test"),
                 markov_spec=markov,
@@ -322,6 +325,7 @@ def create_app(test_config=None):
             file_list = open(os.path.join(app.config["SOMPYLER"], "introspectables.txt"))
             for line in file_list:
                 yield line.rstrip()
+            file_list.close()
 
         if request.method == 'POST':
             user = auth.current_user()
@@ -406,21 +410,22 @@ def create_app(test_config=None):
             )
         title = request.args.get("title")
         if os.path.exists(path):
-            for line in open(
+            with open(
                     procman.worker_directory_of_user(user, "score"), "r"
-                ):
-                if line == "title:\n":
-                    title = ''
-                elif title is not None:
-                    if line.isspace(): break
-                    if line[0].isspace():
-                        title = " ".join([title, line.strip()])
-                    else: break
-                elif line.startswith("title: "):
-                    title = line[7:].rstrip()
-                    break
-                elif line.isspace() or not line:
-                    break
+                ) as score_file:
+                for line in score_file:
+                    if line == "title:\n":
+                        title = ''
+                    elif title is not None:
+                        if line.isspace(): break
+                        if line[0].isspace():
+                            title = " ".join([title, line.strip()])
+                        else: break
+                    elif line.startswith("title: "):
+                        title = line[7:].rstrip()
+                        break
+                    elif line.isspace() or not line:
+                        break
             url = procman.publish_tarfile(
                     auth.current_user(), title or "No title"
                 )
@@ -448,14 +453,15 @@ def create_app(test_config=None):
         status = procman.get_status(user)
         status['timestamp'] = int(datetime.now().timestamp())
         score_file = procman.worker_directory_of_user(user, "score")
-        return render_template(
-            "sompyler-status-report.tmpl",
-            yamlcode=open(score_file).read().rstrip(),
-            publish="EXT_PUBLISH_CMD" in app.config,
-            user=user,
-            quota=quota(user),   
-            **status
-        )
+        with open(score_file) as score_fh:
+            return render_template(
+                "sompyler-status-report.tmpl",
+                yamlcode=score_fh.read().rstrip(),
+                publish="EXT_PUBLISH_CMD" in app.config,
+                user=user,
+                quota=quota(user),   
+                **status
+            )
 
     @app.route("/sompyle/status.json", endpoint='statusjson')
     @auth.login_required
@@ -508,8 +514,9 @@ def create_app(test_config=None):
             if request.args.get("concise"):
                 response = make_response()
                 response.headers['Content-Type'] = 'text/plain'
-                response.data = unindenter(open(score_file)).encode("utf-8")
-                return response
+                with open(score_file) as score_fh:
+                    response.data = unindenter(score_fh).encode("utf-8")
+                    return response
             else:
                 return send_file(score_file, mimetype="text/plain")
 
