@@ -388,7 +388,7 @@ def create_app(test_config=None):
                 except FileNotFoundError:
                     pass
             return render_template("yaml-input.tmpl",
-                yamlcode=yamlcode,
+                yamlcode=yamlcode.rstrip(),
                 user=user,
                 quota=quota(user),
                 limits=app.config.get("SOMPYLER_LIMITS"),
@@ -448,7 +448,7 @@ def create_app(test_config=None):
         score_file = procman.worker_directory_of_user(user, "score")
         return render_template(
             "sompyler-status-report.tmpl",
-            yamlcode=open(score_file).read(),
+            yamlcode=open(score_file).read().rstrip(),
             publish="EXT_PUBLISH_CMD" in app.config,
             user=user,
             quota=quota(user),   
