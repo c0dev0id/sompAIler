@@ -6,6 +6,7 @@ import sqlite3, json, tempfile
 con = None
 con_path = None
 
+LINE_LIMIT=100000
 STD_RESOURCES = 10**9
 SOMPYLER = None
 SOMPYLER_LIMITS = None
@@ -197,8 +198,9 @@ def initialize_sompyler(user, score):
             " WHERE userid=(SELECT ROWID FROM user WHERE name=?)",
             (user,)
         )
-        for line in score:
+        for i, line in enumerate(score):
             print(line, file=score_fh)
+            if i == LINE_LIMIT: break
         con.commit()
 
 
