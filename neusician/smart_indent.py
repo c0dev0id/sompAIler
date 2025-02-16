@@ -26,13 +26,15 @@ def expand(string):
     look_for_loop = False
     ext = False
     loop = 1
+    YAML_DOC_SEP = "\n---"
 
     def multiline(string):
         nonlocal look_for_loop, ext, loop
-        complex_measure = unpack_measure
+        complex_measure = singline
 
         for m in re.finditer(numindent_rx, string, re.MULTILINE):
 
+            sep = ""
             inispace = ""
             parts = []
             partial_string = m.group(0)
@@ -54,7 +56,7 @@ def expand(string):
                 elif complex_measure == unpack_measure:
                     preamble = line_split.pop(0)
                     yield from singline(preamble)
-                    yield "\n---"
+                    sep = YAML_DOC_SEP
 
                 for part in line_split:
                     if (lm := re.match(r'(?:L|\s*_loop:\s+)(\d+) ', part)):
@@ -103,11 +105,10 @@ def expand(string):
             else:
                 parts = [m.group(0)]
             
-            sep = ""
             for part1 in parts:
                 if sep: yield sep
                 yield from complex_measure(part1)
-                sep = "\n---"
+                sep = YAML_DOC_SEP
 
     try:
         yield from multiline(string)
@@ -223,7 +224,7 @@ def unpack_measure(string):
                 unpacked.extend(singline(ini_per_voice, 1))
         yield "\n".join(unpacked)
     else:
-        yield from singline(("0: " if header else "") + string)
+        yield from singline(("0: " if header else "") + first_string)
 
 
 def unindent_from(fileobj):
@@ -264,6 +265,7 @@ def unindent_from(fileobj):
 
 if __name__ == '__main__':
     for i, text in enumerate((
+            "MORPH:\n- bla\nWS: foo | first measure",
             "name: Florian H.\n"
             "age: too old to get indentation right in the morning\n"
             "character:\n"
