@@ -1,4 +1,4 @@
-max_lane_id = 0;
+spare_lane_id = 0;
 function Counter() {
     let cnt = {};
 
@@ -34,7 +34,6 @@ function change_state(table, new_state) {
     console.log("Change state to " + new_state);
     var table = table.find("tbody");
     var tds = table.find("td");
-
     var lane_ids = table.data("laneids");
     var touched = table.data("touched") || new Counter();
     var rows = table.children("tr");
@@ -44,24 +43,25 @@ function change_state(table, new_state) {
          lane_ids = new Array(cols * rows);
          table.data("laneids", lane_ids);
          table.data("touched", touched);
+	 table.data("cols", cols)
          return;
     }
 
     var min_lane_id = touched.sorted_lanes()[0];
-    if ( min_lane_id > max_lane_id ) {
-        max_lane_id = min_lane_id;
-	console.log(`New max_lane_id = ${max_lane_id}`)
+    
+    if ( min_lane_id > spare_lane_id ) {
+        spare_lane_id = min_lane_id;
+	console.log(`New spare_lane_id = ${spare_lane_id}`)
     }
 
-    let this_lane_id;
     const i_left = -1;
-    const i_dgnw = -1 - 12;
-    const i_top = -12;
-    const i_dgne = +1 - 12;
+    const i_dgnw = -1 - rows;
+    const i_top = -rows;
+    const i_dgne = +1 - rows
     const i_right = +1;
-    const i_dgse = +1 + 12
-    const i_bottom = +12;
-    const i_dgsw = -1 + 12;
+    const i_dgse = +1 + rows;
+    const i_bottom = +rows;
+    const i_dgsw = -1 + rows;
     table.children("tr").each(function (i) {
         i -= 1;
         $(this).children("td").each(function (j) {
@@ -88,14 +88,16 @@ function change_state(table, new_state) {
         var bottomroom = linc / cols - rows + 1 < rows;
 
         if ( new_state == true ) {
-            if ( $(this).hasClass("marked") )
+            if ( $(this).hasClass("marked") ) {
                 $(this).addClass("active-lane");
+            }
             else {
-                $(this).removeClass("active-lane");
+		if (lane_ids[linc] == min_lane_id)
+		    $(this).addClass("active-lane");
+		else
+                    $(this).removeClass("active-lane");
                 return;
             }
-
-            lane_ids[linc] = min_lane_id;
 
             let strl = touched.is( lane_ids[linc + i_left] );
             let stru = touched.is( lane_ids[linc + i_top] );
@@ -239,7 +241,8 @@ $(function () {
         e.stopImmediatePropagation();
         $(this).toggleClass("marked");
         var tbody = $(this).closest("tbody");
-        var lane_id = tbody.data("laneids")[ $(this).index() ] || max_lane_id+1;
+	var index = tbody.data("cols") * ($(this).parent().index()-1) + $(this).index() - 1;
+        var lane_id = tbody.data("laneids")[ index ] || spare_lane_id+1;
         var touched = tbody.data("touched")[ $(this).hasClass("marked") ? "up" : "down" ](lane_id);
         console.log(`Lane id ${lane_id} now marked ${touched} times.`);
         var x = $(this).closest("tr").children("td").index(this);
