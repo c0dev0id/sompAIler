@@ -64,6 +64,7 @@ function change_state(table, new_state) {
     const i_dgse = +1 + cols;
     const i_bottom = +cols;
     const i_dgsw = -1 + cols;
+
     table.children("tr").each(function (i) {
         i -= 1;
         $(this).children("td").each(function (j) {
@@ -117,7 +118,7 @@ function change_state(table, new_state) {
 	if ( l_dgse >= lane_ids.length ) l_dgse = -1;
         let dgse = touched.is( lane_ids[l_dgse] );
 	
-	let l_dgsw = linc + i_dgse;
+	let l_dgsw = linc + i_dgsw;
 	if ( l_dgsw >= lane_ids.length ) l_dgsw = -1;
         let dgsw = touched.is( lane_ids[l_dgsw] );
 
@@ -215,41 +216,41 @@ function change_state(table, new_state) {
             if ( leftroom && lane_ids[l_left] != null )
                 tds.eq(l_left).removeClass("merge-right");
 
-            if ( leftroom && toproom && lane_ids[l_dgnw] != null ) {
+            if ( lane_ids[l_dgnw] != null ) {
                if ( lane_ids[l_left] == null)
                  tds.eq(l_dgnw).removeClass("merge-bottom");
                if (lane_ids[l_top] == null)
                  tds.eq(l_dgnw).removeClass("merge-right");
             }
 
-            if ( toproom && lane_ids[l_top] != null )
+            if ( lane_ids[l_top] != null )
                 tds.eq(l_top).removeClass("merge-bottom");
 
-            if ( toproom && rightroom && lane_ids[l_dgne] != null ) {
+            if ( lane_ids[l_dgne] != null ) {
                if ( lane_ids[l_right] == null )
-                 tds.eq(l_dgnw).removeClass("merge-bottom");
+                 tds.eq(l_dgne).removeClass("merge-bottom");
                if ( lane_ids[l_top] == null )
-                 tds.eq(l_dgnw).removeClass("merge-left");
+                 tds.eq(l_dgne).removeClass("merge-left");
             }
 
-            if ( rightroom && lane_ids[l_right] != null )
+            if ( lane_ids[l_right] != null )
                 tds.eq(l_right).removeClass("merge-left");
 
-            if ( rightroom && bottomroom && lane_ids[l_dgse] != null ) {
+            if ( lane_ids[l_dgse] != null ) {
                if ( lane_ids[l_right] == null )
                  tds.eq(l_dgse).removeClass("merge-top");
                if ( lane_ids[l_bottom] == null )
-                 tds.eq(l_dgnw).removeClass("merge-left");
+                 tds.eq(l_dgse).removeClass("merge-left");
             }
 
-            if ( bottomroom && lane_ids[l_bottom] != null )
+            if ( lane_ids[l_bottom] != null )
                 tds.eq(l_bottom).removeClass("merge-top");
 
-            if ( bottomroom && leftroom && lane_ids[l_dgsw] != null ) {
+            if ( lane_ids[l_dgsw] != null ) {
                if ( lane_ids[l_left] == null )
-                 tds.eq(l_dgse).removeClass("merge-top");
+                 tds.eq(l_dgsw).removeClass("merge-top");
                if ( lane_ids[l_bottom] == null )
-                 tds.eq(l_dgnw).removeClass("merge-right");
+                 tds.eq(l_dgsw).removeClass("merge-right");
             }
         }
 
@@ -259,6 +260,7 @@ function change_state(table, new_state) {
     let old_value = lane_ids[min_lane_id];
     console.log(`${min_lane_id} / ${old_value} was the old value`);
     touched.reset(min_lane_id);
+    console.log(`is touched: ${touched.is(min_lane_id)}`);
 }
 
 $(function () {
