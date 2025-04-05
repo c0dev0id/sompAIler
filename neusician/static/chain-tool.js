@@ -40,28 +40,30 @@ function change_state(table, new_state) {
     var cols = rows.eq(1).children("td").length;
     rows = rows.length - 1;
     if ( lane_ids == null ) {
-         lane_ids = new Array(cols * rows);
+         lane_ids = new Array(cols * rows + 1);
          table.data("laneids", lane_ids);
          table.data("touched", touched);
 	 table.data("cols", cols)
          return;
     }
 
-    var min_lane_id = touched.sorted_lanes()[0];
+    var touched_lanes = touched.sorted_lanes(),
+        min_lane_id = touched_lanes[0];
     
+    console.log(`touched_lanes = ${touched_lanes.join(", ")}`);
     if ( min_lane_id > spare_lane_id ) {
         spare_lane_id = min_lane_id;
 	console.log(`New spare_lane_id = ${spare_lane_id}`)
     }
 
     const i_left = -1;
-    const i_dgnw = -1 - rows;
-    const i_top = -rows;
-    const i_dgne = +1 - rows
+    const i_dgnw = -1 - cols;
+    const i_top = -cols;
+    const i_dgne = +1 - cols;
     const i_right = +1;
-    const i_dgse = +1 + rows;
-    const i_bottom = +rows;
-    const i_dgsw = -1 + rows;
+    const i_dgse = +1 + cols;
+    const i_bottom = +cols;
+    const i_dgsw = -1 + cols;
     table.children("tr").each(function (i) {
         i -= 1;
         $(this).children("td").each(function (j) {
@@ -82,45 +84,69 @@ function change_state(table, new_state) {
     });
     tds.each(function (linc) {
     	var indicator = 0;
-        var leftroom = linc % cols;
+        var leftroom = Boolean(linc % cols);
         var toproom = linc+1 > cols;
-        var rightroom = linc+1 % cols;
-        var bottomroom = linc / cols - rows + 1 < rows;
+        var rightroom = Boolean((linc+1) % cols);
+        var bottomroom = Math.ceil((linc+1) / cols) < rows;
+
+	let l_left = linc + i_left;
+	if ( l_left < 0 ) l_left = -1;
+        let strl = touched.is( lane_ids[l_left] );
+
+	let l_top = linc + i_top;
+	if ( l_top < 0 ) l_top = -1;
+        let stru = touched.is( lane_ids[l_top] );
+	
+	let l_right = linc + i_right;
+	if ( l_right >= lane_ids.length ) l_right = -1;
+        let strr = touched.is( lane_ids[l_right] );
+	
+	let l_bottom = linc + i_bottom;
+	if ( l_bottom >= lane_ids.length ) l_bottom = -1;
+        let strd = touched.is( lane_ids[l_bottom] );
+	
+	let l_dgnw = linc + i_dgnw;
+	if ( l_dgnw < 0 ) l_dgnw = -1
+        let dgnw = touched.is( lane_ids[l_dgnw] );
+	
+	let l_dgne = linc + i_dgne;
+	if ( l_dgne < 0 ) l_dgne = -1;
+        let dgne = touched.is( lane_ids[l_dgne] );
+	
+	let l_dgse = linc + i_dgse;
+	if ( l_dgse >= lane_ids.length ) l_dgse = -1;
+        let dgse = touched.is( lane_ids[l_dgse] );
+	
+	let l_dgsw = linc + i_dgse;
+	if ( l_dgsw >= lane_ids.length ) l_dgsw = -1;
+        let dgsw = touched.is( lane_ids[l_dgsw] );
 
         if ( new_state == true ) {
             if ( $(this).hasClass("marked") ) {
+		console.log(`${linc}: L${leftroom} T${toproom} R${rightroom} B${bottomroom}`);
                 $(this).addClass("active-lane");
             }
             else {
-		if (lane_ids[linc] == min_lane_id)
+		if (touched_lanes.includes(lane_ids[linc]))
 		    $(this).addClass("active-lane");
 		else
                     $(this).removeClass("active-lane");
                 return;
             }
 
-            let strl = touched.is( lane_ids[linc + i_left] );
-            let stru = touched.is( lane_ids[linc + i_top] );
-            let strr = touched.is( lane_ids[linc + i_right] );
-            let strd = touched.is( lane_ids[linc + i_bottom] );
-            let dgnw = touched.is( lane_ids[linc + i_dgnw] );
-            let dgne = touched.is( lane_ids[linc + i_dgne] );
-            let dgse = touched.is( lane_ids[linc + i_dgse] );
-            let dgsw = touched.is( lane_ids[linc + i_dgsw] );
-
             if ( leftroom && (dgsw || strl || dgnw) ) {
                 if (strl) {
-                    tds.eq(linc + i_left).addClass("merge-right");
+                    tds.eq(l_left).addClass("merge-right");
                     $(this).addClass("merge-left");
 		    indicator += 1;
                 }
                 else {
                     if ( dgsw ) {
-			tds.eq(linc + i_dgsw).addClass("merge-right");
+			tds.eq(l_dgsw).addClass("merge-right");
 			indicator += 2;
 		    }
                     if ( dgnw ) {
-		    	tds.eq(linc + i_dgnw).addClass("merge-right");
+		    	tds.eq(l_dgnw).addClass("merge-right");
 			indicator += 4;
 		    }
                 }
@@ -128,17 +154,17 @@ function change_state(table, new_state) {
 
             if ( toproom && (dgnw || stru || dgne) ) {
                 if (stru) {
-                    tds.eq(linc + i_top).addClass("merge-bottom");
+                    tds.eq(l_top).addClass("merge-bottom");
                     $(this).addClass("merge-top");
 		    indicator += 8;
                 }
                 else {
                     if ( dgnw ) {
-		    	tds.eq(linc + i_dgnw).addClass("merge-bottom");
+		    	tds.eq(l_dgnw).addClass("merge-bottom");
 			indicator += 16;
 		    }
                     if ( dgne ) {
-		    	tds.eq(linc + i_dgne).addClass("merge-bottom");
+		    	tds.eq(l_dgne).addClass("merge-bottom");
 			indicator += 32;
 		    }
                 }
@@ -146,17 +172,17 @@ function change_state(table, new_state) {
 
             if ( rightroom && (dgne || strr || dgse) ) {
                 if (strr) {
-                    tds.eq(linc + i_right).addClass("merge-left");
+                    tds.eq(l_right).addClass("merge-left");
                     $(this).addClass("merge-right");
 		    indicator += 64;
                 }
                 else {
                     if ( dgnw ) {
-		    	tds.eq(linc + i_dgne).addClass("merge-left");
+		    	tds.eq(l_dgne).addClass("merge-left");
 			indicator += 128;
 		    }
                     if ( dgse ) {
-		    	tds.eq(linc + i_dgse).addClass("merge-left");
+		    	tds.eq(l_dgse).addClass("merge-left");
 			indicator += 256;
 		    }
                 }
@@ -164,17 +190,17 @@ function change_state(table, new_state) {
 
             if ( bottomroom && (dgse || strd || dgsw) ) {
                 if (strd) {
-                    tds.eq(linc + i_bottom).addClass("merge-top");
+                    tds.eq(l_bottom).addClass("merge-top");
                     $(this).addClass("merge-bottom");
 		    indicator += 512;
                 }
                 else {
                     if ( dgnw ) {
-		    	tds.eq(linc + i_dgnw).addClass("merge-top");
+		    	tds.eq(l_dgnw).addClass("merge-top");
 			indicator += 1024;
 		    }
                     if ( dgsw ) {
-		        tds.eq(linc + i_dgsw).addClass("merge-top");
+		        tds.eq(l_dgsw).addClass("merge-top");
 			indicator += 2048;
 		    }
                 }
@@ -186,44 +212,44 @@ function change_state(table, new_state) {
 
         else if ( new_state == false ) {
             if ( !$(this).hasClass("marked") ) return;
-            if ( leftroom && lane_ids[linc + i_left] != null )
-                tds.eq(linc + i_left).removeClass("merge-right");
+            if ( leftroom && lane_ids[l_left] != null )
+                tds.eq(l_left).removeClass("merge-right");
 
-            if ( leftroom && toproom && lane_ids[linc + i_dgnw] != null ) {
-               if ( lane_ids[linc + i_left] == null)
-                 tds.eq(linc + i_dgnw).removeClass("merge-bottom");
-               if (lane_ids[linc + i_top] == null)
-                 tds.eq(linc + i_dgnw).removeClass("merge-right");
+            if ( leftroom && toproom && lane_ids[l_dgnw] != null ) {
+               if ( lane_ids[l_left] == null)
+                 tds.eq(l_dgnw).removeClass("merge-bottom");
+               if (lane_ids[l_top] == null)
+                 tds.eq(l_dgnw).removeClass("merge-right");
             }
 
-            if ( toproom && lane_ids[linc + i_top] != null )
-                tds.eq(linc + i_top).removeClass("merge-bottom");
+            if ( toproom && lane_ids[l_top] != null )
+                tds.eq(l_top).removeClass("merge-bottom");
 
-            if ( toproom && rightroom && lane_ids[linc + i_dgne] != null ) {
-               if ( lane_ids[linc + i_right] == null )
-                 tds.eq(linc + i_dgnw).removeClass("merge-bottom");
-               if ( lane_ids[linc + i_top] == null )
-                 tds.eq(linc + i_dgnw).removeClass("merge-left");
+            if ( toproom && rightroom && lane_ids[l_dgne] != null ) {
+               if ( lane_ids[l_right] == null )
+                 tds.eq(l_dgnw).removeClass("merge-bottom");
+               if ( lane_ids[l_top] == null )
+                 tds.eq(l_dgnw).removeClass("merge-left");
             }
 
-            if ( rightroom && lane_ids[linc + i_right] != null )
-                tds.eq(linc + i_right).removeClass("merge-left");
+            if ( rightroom && lane_ids[l_right] != null )
+                tds.eq(l_right).removeClass("merge-left");
 
-            if ( rightroom && bottomroom && lane_ids[linc + i_dgse] != null ) {
-               if ( lane_ids[linc + i_right] == null )
-                 tds.eq(linc + i_dgse).removeClass("merge-top");
-               if ( lane_ids[linc + i_bottom] == null )
-                 tds.eq(linc + i_dgnw).removeClass("merge-left");
+            if ( rightroom && bottomroom && lane_ids[l_dgse] != null ) {
+               if ( lane_ids[l_right] == null )
+                 tds.eq(l_dgse).removeClass("merge-top");
+               if ( lane_ids[l_bottom] == null )
+                 tds.eq(l_dgnw).removeClass("merge-left");
             }
 
-            if ( bottomroom && lane_ids[linc + i_bottom] != null )
-                tds.eq(linc + i_bottom).removeClass("merge-top");
+            if ( bottomroom && lane_ids[l_bottom] != null )
+                tds.eq(l_bottom).removeClass("merge-top");
 
-            if ( bottomroom && leftroom && lane_ids[linc + i_dgsw] != null ) {
-               if ( lane_ids[linc + i_left] == null )
-                 tds.eq(linc + i_dgse).removeClass("merge-top");
-               if ( lane_ids[linc + i_bottom] == null )
-                 tds.eq(linc + i_dgnw).removeClass("merge-right");
+            if ( bottomroom && leftroom && lane_ids[l_dgsw] != null ) {
+               if ( lane_ids[l_left] == null )
+                 tds.eq(l_dgse).removeClass("merge-top");
+               if ( lane_ids[l_bottom] == null )
+                 tds.eq(l_dgnw).removeClass("merge-right");
             }
         }
 
