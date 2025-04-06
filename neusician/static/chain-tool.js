@@ -136,9 +136,9 @@ function change_state(table, new_state) {
             }
 
             if ( leftroom && (dgsw || strl || dgnw) ) {
+                $(this).addClass("merge-left");
                 if (strl) {
                     tds.eq(l_left).addClass("merge-right");
-                    $(this).addClass("merge-left");
 		    indicator += 1;
                 }
                 else {
@@ -154,9 +154,9 @@ function change_state(table, new_state) {
             }
 
             if ( toproom && (dgnw || stru || dgne) ) {
+                $(this).addClass("merge-top");
                 if (stru) {
                     tds.eq(l_top).addClass("merge-bottom");
-                    $(this).addClass("merge-top");
 		    indicator += 8;
                 }
                 else {
@@ -172,14 +172,14 @@ function change_state(table, new_state) {
             }
 
             if ( rightroom && (dgne || strr || dgse) ) {
+                $(this).addClass("merge-right");
                 if (strr) {
                     tds.eq(l_right).addClass("merge-left");
-                    $(this).addClass("merge-right");
 		    indicator += 64;
                 }
                 else {
                     if ( dgnw ) {
-		    	tds.eq(l_dgne).addClass("merge-left");
+		    	tds.eq(l_dgnw).addClass("merge-left");
 			indicator += 128;
 		    }
                     if ( dgse ) {
@@ -190,14 +190,14 @@ function change_state(table, new_state) {
             }
 
             if ( bottomroom && (dgse || strd || dgsw) ) {
+                $(this).addClass("merge-bottom");
                 if (strd) {
                     tds.eq(l_bottom).addClass("merge-top");
-                    $(this).addClass("merge-bottom");
 		    indicator += 512;
                 }
                 else {
-                    if ( dgnw ) {
-		    	tds.eq(l_dgnw).addClass("merge-top");
+                    if ( dgse ) {
+		    	tds.eq(l_dgse).addClass("merge-top");
 			indicator += 1024;
 		    }
                     if ( dgsw ) {
@@ -213,6 +213,7 @@ function change_state(table, new_state) {
 
         else if ( new_state == false ) {
             if ( !$(this).hasClass("marked") ) return;
+
             if ( leftroom && lane_ids[l_left] != null )
                 tds.eq(l_left).removeClass("merge-right");
 
