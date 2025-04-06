@@ -107,7 +107,7 @@ function change_state(table, new_state) {
         let strd = touched.is( lane_ids[l_bottom] );
 	
 	let l_dgnw = linc + i_dgnw;
-	if ( l_dgnw < 0 ) l_dgnw = -1
+	if ( l_dgnw < 0 ) l_dgnw = -1;
         let dgnw = touched.is( lane_ids[l_dgnw] );
 	
 	let l_dgne = linc + i_dgne;
@@ -252,15 +252,15 @@ function change_state(table, new_state) {
                if ( lane_ids[l_bottom] == null )
                  tds.eq(l_dgsw).removeClass("merge-right");
             }
+
+            $(this).removeClass("merge-left merge-right merge-top merge-bottom active-lane");
+
         }
 
         $(this).removeClass("marked");
 
     });
-    let old_value = lane_ids[min_lane_id];
-    console.log(`${min_lane_id} / ${old_value} was the old value`);
     touched.reset(min_lane_id);
-    console.log(`is touched: ${touched.is(min_lane_id)}`);
 }
 
 $(function () {
