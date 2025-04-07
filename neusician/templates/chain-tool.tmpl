@@ -5,17 +5,22 @@
 {% block main %}
 
 <style>
+th { line-height: 1em; }
 td { height: 1em; min-width: 1em; }
 td.marked { outline: 2px outset orange; }
-table { border-collapse: collapse;  }
+table { border-collapse: collapse; border: none;  }
 tr { margin: 0; padding: 0; }
-td { margin: 2px; padding: 2px; border:3px inset grey; }
-td div { background-color: lightgrey; height: 100%; width: 100%; }
+td { margin: 0; padding: 0; } /* border:3px inset grey; */
+td div { background-color: lightgrey; height: 100%; width: 100%; border-radius: 40%; margin: 0; }
 td.active-lane div { background-color: grey; }
-td.merge-left { margin-left: 0; padding-left: 0; border-left: none }
+td.merge-left { margin-left: 0; padding-left: 0; border-left: none; }
+td.merge-left div { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 td.merge-right { margin-right: 0; padding-right: 0; border-right: none; }
+td.merge-right div { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 td.merge-top { margin-top: 0; padding-top: 0; border-top: none; }
+td.merge-top div { border-top-left-radius: 0; border-top-right-radius: 0; }
 td.merge-bottom { margin-bottom: 0; padding-bottom: 0; border-right: none; }
+td.merge-bottom div { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 th .ui-spinner { width: 4em; }
 </style>
 

@@ -136,12 +136,13 @@ function change_state(table, new_state) {
             }
 
             if ( leftroom && (dgsw || strl || dgnw) ) {
-                $(this).addClass("merge-left");
                 if (strl) {
+                    $(this).addClass("merge-left");
                     tds.eq(l_left).addClass("merge-right");
 		    indicator += 1;
                 }
                 else {
+                    if ( !stru && !strd ) $(this).addClass("merge-left");
                     if ( dgsw ) {
 			tds.eq(l_dgsw).addClass("merge-right");
 			indicator += 2;
@@ -154,12 +155,13 @@ function change_state(table, new_state) {
             }
 
             if ( toproom && (dgnw || stru || dgne) ) {
-                $(this).addClass("merge-top");
                 if (stru) {
+                    $(this).addClass("merge-top");
                     tds.eq(l_top).addClass("merge-bottom");
 		    indicator += 8;
                 }
                 else {
+                    if ( !strl && !strr ) $(this).addClass("merge-top");
                     if ( dgnw ) {
 		    	tds.eq(l_dgnw).addClass("merge-bottom");
 			indicator += 16;
@@ -172,14 +174,15 @@ function change_state(table, new_state) {
             }
 
             if ( rightroom && (dgne || strr || dgse) ) {
-                $(this).addClass("merge-right");
                 if (strr) {
+		    $(this).addClass("merge-right");
                     tds.eq(l_right).addClass("merge-left");
 		    indicator += 64;
                 }
                 else {
-                    if ( dgnw ) {
-		    	tds.eq(l_dgnw).addClass("merge-left");
+                    if ( !stru && !strd ) $(this).addClass("merge-right");
+                    if ( dgne ) {
+		    	tds.eq(l_dgne).addClass("merge-left");
 			indicator += 128;
 		    }
                     if ( dgse ) {
@@ -190,12 +193,13 @@ function change_state(table, new_state) {
             }
 
             if ( bottomroom && (dgse || strd || dgsw) ) {
-                $(this).addClass("merge-bottom");
                 if (strd) {
+		    $(this).addClass("merge-bottom");
                     tds.eq(l_bottom).addClass("merge-top");
 		    indicator += 512;
                 }
                 else {
+                    if ( !strl && !strr ) $(this).addClass("merge-bottom");
                     if ( dgse ) {
 		    	tds.eq(l_dgse).addClass("merge-top");
 			indicator += 1024;
