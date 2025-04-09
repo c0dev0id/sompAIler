@@ -83,6 +83,10 @@ function change_state(table, new_state) {
              }
         });
     });
+    function is_touched (linc) {
+        if ( linc < 0 || linc >= lane_ids.length ) linc = -1;
+	return touched.is( lane_ids[linc] ) ? tds.eq(linc) : null;
+    }
     tds.each(function (linc) {
     	var indicator = 0;
         var leftroom = Boolean(linc % cols);
@@ -90,37 +94,15 @@ function change_state(table, new_state) {
         var rightroom = Boolean((linc+1) % cols);
         var bottomroom = Math.ceil((linc+1) / cols) < rows;
 
-	let l_left = linc + i_left;
-	if ( l_left < 0 ) l_left = -1;
-        let strl = touched.is( lane_ids[l_left] );
-
-	let l_top = linc + i_top;
-	if ( l_top < 0 ) l_top = -1;
-        let stru = touched.is( lane_ids[l_top] );
+	let strl = is_touched(linc + i_left);
+	let stru = is_touched(linc + i_top);
+	let strr = is_touched(linc + i_right);
+	let strd = is_touched(linc + i_bottom);
 	
-	let l_right = linc + i_right;
-	if ( l_right >= lane_ids.length ) l_right = -1;
-        let strr = touched.is( lane_ids[l_right] );
-	
-	let l_bottom = linc + i_bottom;
-	if ( l_bottom >= lane_ids.length ) l_bottom = -1;
-        let strd = touched.is( lane_ids[l_bottom] );
-	
-	let l_dgnw = linc + i_dgnw;
-	if ( l_dgnw < 0 ) l_dgnw = -1;
-        let dgnw = touched.is( lane_ids[l_dgnw] );
-	
-	let l_dgne = linc + i_dgne;
-	if ( l_dgne < 0 ) l_dgne = -1;
-        let dgne = touched.is( lane_ids[l_dgne] );
-	
-	let l_dgse = linc + i_dgse;
-	if ( l_dgse >= lane_ids.length ) l_dgse = -1;
-        let dgse = touched.is( lane_ids[l_dgse] );
-	
-	let l_dgsw = linc + i_dgsw;
-	if ( l_dgsw >= lane_ids.length ) l_dgsw = -1;
-        let dgsw = touched.is( lane_ids[l_dgsw] );
+	let dgnw = is_touched(linc + i_dgnw);
+	let dgne = is_touched(linc + i_dgne);
+	let dgse = is_touched(linc + i_dgse);
+	let dgsw = is_touched(linc + i_dgsw);
 
         if ( new_state == true ) {
             if ( $(this).hasClass("marked") ) {
@@ -138,17 +120,17 @@ function change_state(table, new_state) {
             if ( leftroom && (dgsw || strl || dgnw) ) {
                 if (strl) {
                     $(this).addClass("merge-left");
-                    tds.eq(l_left).addClass("merge-right str-right");
+                    strl.addClass("merge-right str-right");
 		    indicator += 1;
                 }
                 else {
                     if ( !stru && !strd ) $(this).addClass("merge-left");
                     if ( dgsw ) {
-			tds.eq(l_dgsw).addClass("merge-right");
+			dgsw.addClass("merge-right");
 			indicator += 2;
 		    }
                     if ( dgnw ) {
-		    	tds.eq(l_dgnw).addClass("merge-right");
+		    	dgnw.addClass("merge-right");
 			indicator += 4;
 		    }
                 }
@@ -157,17 +139,17 @@ function change_state(table, new_state) {
             if ( toproom && (dgnw || stru || dgne) ) {
                 if (stru) {
                     $(this).addClass("merge-top");
-                    tds.eq(l_top).addClass("merge-bottom str-bottom");
+                    stru.addClass("merge-bottom str-bottom");
 		    indicator += 8;
                 }
                 else {
                     if ( !strl && !strr ) $(this).addClass("merge-top");
                     if ( dgnw ) {
-		    	tds.eq(l_dgnw).addClass("merge-bottom");
+		    	dgnw.addClass("merge-bottom");
 			indicator += 16;
 		    }
                     if ( dgne ) {
-		    	tds.eq(l_dgne).addClass("merge-bottom");
+		    	dgne.addClass("merge-bottom");
 			indicator += 32;
 		    }
                 }
@@ -176,17 +158,17 @@ function change_state(table, new_state) {
             if ( rightroom && (dgne || strr || dgse) ) {
                 if (strr) {
 		    $(this).addClass("merge-right");
-                    tds.eq(l_right).addClass("merge-left str-left");
+                    strr.addClass("merge-left str-left");
 		    indicator += 64;
                 }
                 else {
                     if ( !stru && !strd ) $(this).addClass("merge-right");
                     if ( dgne ) {
-		    	tds.eq(l_dgne).addClass("merge-left");
+		    	dgne.addClass("merge-left");
 			indicator += 128;
 		    }
                     if ( dgse ) {
-		    	tds.eq(l_dgse).addClass("merge-left");
+		    	dgse.addClass("merge-left");
 			indicator += 256;
 		    }
                 }
@@ -195,17 +177,17 @@ function change_state(table, new_state) {
             if ( bottomroom && (dgse || strd || dgsw) ) {
                 if (strd) {
 		    $(this).addClass("merge-bottom");
-                    tds.eq(l_bottom).addClass("merge-top str-top");
+                    strd.addClass("merge-top str-top");
 		    indicator += 512;
                 }
                 else {
                     if ( !strl && !strr ) $(this).addClass("merge-bottom");
                     if ( dgse ) {
-		    	tds.eq(l_dgse).addClass("merge-top");
+		    	dgse.addClass("merge-top");
 			indicator += 1024;
 		    }
                     if ( dgsw ) {
-		        tds.eq(l_dgsw).addClass("merge-top");
+		        dgsw.addClass("merge-top");
 			indicator += 2048;
 		    }
                 }
@@ -218,47 +200,47 @@ function change_state(table, new_state) {
         else if ( new_state == false ) {
             if ( !$(this).hasClass("marked") ) return;
 
-            if ( leftroom && lane_ids[l_left] != null )
-                tds.eq(l_left).removeClass("merge-right str-right");
+            if ( strl ) { 
+		strl.removeClass("str-right");
+                if ( !stru || !strd ) strl.removeClass("merge-right");
+	    }
 
-            if ( lane_ids[l_dgnw] != null ) {
-               if ( lane_ids[l_left] == null)
-                 tds.eq(l_dgnw).removeClass("merge-bottom");
-               if (lane_ids[l_top] == null)
-                 tds.eq(l_dgnw).removeClass("merge-right");
+            if ( dgnw ) {
+               if (!strl && !is_touched(linc + 2 * i_left) ) dgnw.removeClass("merge-bottom");
+               if (!stru && !is_touched(linc + 2 * i_top)  ) dgnw.removeClass("merge-right");
             }
 
-            if ( lane_ids[l_top] != null )
-                tds.eq(l_top).removeClass("merge-bottom str-bottom");
-
-            if ( lane_ids[l_dgne] != null ) {
-               if ( lane_ids[l_right] == null )
-                 tds.eq(l_dgne).removeClass("merge-bottom");
-               if ( lane_ids[l_top] == null )
-                 tds.eq(l_dgne).removeClass("merge-left");
+            if ( stru ) {
+                stru.removeClass("str-bottom");
+                if ( !strl || !strr ) stru.removeClass("merge-bottom");
             }
 
-            if ( lane_ids[l_right] != null )
-                tds.eq(l_right).removeClass("merge-left str-bottom");
-
-            if ( lane_ids[l_dgse] != null ) {
-               if ( lane_ids[l_right] == null )
-                 tds.eq(l_dgse).removeClass("merge-top");
-               if ( lane_ids[l_bottom] == null )
-                 tds.eq(l_dgse).removeClass("merge-left");
+            if ( dgne ) {
+               if ( !strr && !is_touched(linc + 2 * i_right) ) dgne.removeClass("merge-bottom");
+               if ( !stru && !is_touched(linc + 2 * i_top)   ) dgne.removeClass("merge-left");
             }
 
-            if ( lane_ids[l_bottom] != null )
-                tds.eq(l_bottom).removeClass("merge-top str-top");
+            if ( strr ) {
+                strr.removeClass("str-left");
+                if ( !stru || !strd ) strr.removeClass("merge-left");
+	    }
 
-            if ( lane_ids[l_dgsw] != null ) {
-               if ( lane_ids[l_left] == null )
-                 tds.eq(l_dgsw).removeClass("merge-top");
-               if ( lane_ids[l_bottom] == null )
-                 tds.eq(l_dgsw).removeClass("merge-right");
+            if ( dgse ) {
+               if ( !strr && !is_touched(linc + 2 * i_right) ) dgse.removeClass("merge-top");
+               if ( !strd && !is_touched(linc + 2 * i_bottom)) dgse.removeClass("merge-left");
             }
 
-            $(this).removeClass("merge-left merge-right merge-top merge-bottom active-lane");
+            if ( strd ) {
+                strd.removeClass("str-top");
+                if ( !strl || !strr ) strd.removeClass("merge-top");
+	    }
+
+            if ( dgsw ) {
+               if ( !strl && !is_touched(linc + 2 * i_left)   ) dgsw.removeClass("merge-top");
+               if ( !strd && !is_touched(linc + 2 * i_bottom )) dgsw.removeClass("merge-right");
+            }
+
+            $(this).removeClass("merge-left str-left merge-right str-right merge-top str-top merge-bottom str-bottom active-lane");
 
         }
 
