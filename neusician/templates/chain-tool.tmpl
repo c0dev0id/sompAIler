@@ -13,17 +13,17 @@ td { margin: 0; padding: 0; } /* border:3px inset grey; */
 td div { background-color: lightgrey; height: 100%; width: 100%; border-radius: 40%; margin: 0; }
 td.active-lane div { background-color: grey; }
 td.merge-left { margin-left: 0; padding-left: 0; border-left: none; }
-td.merge-left:is(.merge-top, .str-left, :not(.merge-bottom)) div { border-top-left-radius: 0; }
-td.merge-left:is(.merge-bottom, .str-left, :not(.merge-top)) div { border-bottom-left-radius: 0; }
+td.merge-left:is(.merge-top:not(.str-left, .str-top), .str-left, .str-top) div { border-top-left-radius: 0; }
+td.merge-left:is(.merge-bottom:not(.str-left, .str-bottom), .str-left, .str-bottom) div { border-bottom-left-radius: 0; }
 td.merge-right { margin-right: 0; padding-right: 0; border-right: none; }
-td.merge-right:is(.merge-top, .str-right, :not(.merge-bottom)) div { border-top-right-radius: 0; }
-td.merge-right:is(.merge-bottom, .str-right, :not(.merge-top)) div { border-bottom-right-radius: 0; }
+td.merge-right:is(.merge-top:not(.str-right, .str-top), .str-right, .str-top) div { border-top-right-radius: 0; }
+td.merge-right:is(.merge-bottom:not(.str-right, .str-bottom), .str-right, .str-bottom) div { border-bottom-right-radius: 0; }
 td.merge-top { margin-top: 0; padding-top: 0; border-top: none; }
-td.merge-top:is(.merge-left, .str-top, :not(.merge-right)) div { border-top-left-radius: 0; }
-td.merge-top:is(.merge-right, .str-top, :not(.merge-left)) div { border-top-right-radius: 0; }
+td.merge-top:is(.merge-left:not(.str-top, .str-left), .str-top, .str-left) div { border-top-left-radius: 0; }
+td.merge-top:is(.merge-right:not(.str-top, .str-right), .str-top, .str-right) div { border-top-right-radius: 0; }
 td.merge-bottom { margin-bottom: 0; padding-bottom: 0; border-right: none; }
-td.merge-bottom:is(.merge-left, .str-bottom, :not(.merge-right)) div { border-bottom-left-radius: 0; }
-td.merge-bottom:is(.merge-right, .str-bottom, :not(.merge-left)) div { border-bottom-right-radius: 0; }
+td.merge-bottom:is(.merge-left:not(.str-bottom, .str-left), .str-bottom, .str-left) div { border-bottom-left-radius: 0; }
+td.merge-bottom:is(.merge-right:not(.str-bottom, .str-right), .str-bottom, .str-right) div { border-bottom-right-radius: 0; }
 th .ui-spinner { width: 4em; }
 </style>
 
