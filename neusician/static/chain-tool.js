@@ -255,12 +255,16 @@ $(function () {
     $("td").on("click", function (e) {
         e.stopImmediatePropagation();
         $(this).toggleClass("marked");
+	var recently_marked = $("td.recently-marked").get(0);
         var tbody = $(this).closest("tbody");
 	var index = tbody.data("cols") * ($(this).parent().index()-1) + $(this).index() - 1;
         var lane_id = tbody.data("laneids")[ index ] || spare_lane_id+1;
         var touched = tbody.data("touched")[ $(this).hasClass("marked") ? "up" : "down" ](lane_id);
         console.log(`Lane id ${lane_id} now marked ${touched} times.`);
         var x = $(this).closest("tr").children("td").index(this);
+        if ( recently_marked != this )
+            $(recently_marked).removeClass("recently-marked");
+        $(this).toggleClass("recently-marked");
         tbody.find(".in-l").first().val(x);
         tbody.find(".in-r").first().val($(this).closest("tr").children().length - x - 2);
         var y = $(this).closest("tr").index() - 1;

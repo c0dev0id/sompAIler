@@ -5,13 +5,17 @@
 {% block main %}
 
 <style>
+input { width: 3em; }
+p span { border: 1px solid lightgrey; }
 td { height: 1.5em; min-width: 1.5em; }
 td.marked, td:hover { outline: 2px outset orange; }
+td.recently-marked { background-color: orange; }
 table { border-collapse: collapse; border: none;  }
 tr { margin: 0; padding: 0; }
 td { margin: 0; padding: 0; } /* border:3px inset grey; */
 td div { background-color: lightgrey; height: 100%; width: 100%; border-radius: 40%; margin: 0; }
 td.active-lane div { background-color: grey; }
+td.active-lane.recently-marked div { background-color: #444; }
 td.merge-left { margin-left: 0; padding-left: 0; border-left: none; }
 td.merge-left:is(.merge-top:not(.str-left, .str-top), .str-left, .str-top) div { border-top-left-radius: 0; }
 td.merge-left:is(.merge-bottom:not(.str-left, .str-bottom), .str-left, .str-bottom) div { border-bottom-left-radius: 0; }
@@ -26,6 +30,8 @@ td.merge-bottom:is(.merge-left:not(.str-bottom, .str-left), .str-bottom, .str-le
 td.merge-bottom:is(.merge-right:not(.str-bottom, .str-right), .str-bottom, .str-right) div { border-bottom-right-radius: 0; }
 th .ui-spinner { width: 4em; }
 </style>
+
+<form method="get" action=""><p>cols: <input name="cols" type="number" value="{{ cols }}" /> | rows: <input name="rows" type="number" value="{{ rows }}" /> | base: <input name="base" type="number" value="{{ base }}" /> <button type="submit">Render table</button></p></form>
 
 <script src="/static/chain-tool.js">
 </script>
@@ -45,8 +51,12 @@ d: <input class="in-d" min="0"><br>
 {% endfor %}
 </table>
 
+<p id="tones">Tones: <span>C</span> <span>D</span> <span>E</span> <span>F</span> <span>G</span> <span>A</span> <span>B</span></p>
+<p id="accidentals">Accidentals: <span>b (flat)</span> <span>(natural)</span> <span># (sharp)</span></p>
+<p id="octaves">Octaves: <span>0</span> <span>1</span> <span>2</span> <span>3</span> <span>4</span> <span>5</span> <span>6</span> <span>7</span> <span>8</span></p>
+<p id="mask">Mask: <span>&amp;</span> <span>aug</span> <span>&amp;7</span> <span>&amp;7b5</span> <span>maj7</span> <span>m</span> <span>m7</span> <span>mmaj7</span> <span>dim</span> <span>dim7</span> <span>m7b5</span> | scales: <span>mj</span> <span>do</span> <span>ph</span> <span>ly</span> <span>ml</span> <span>mn</span> hm[ <span>1</span> <span>2</span> <span>3</span> <span>4</span> <span>5</span> <span>6</span> <span>7</span>] mm[ <span>1</span> <span>2</span> <span>3</span> <span>4</span> <span>5</span> <span>6</span> <span>7</span>] <span>lc</span> <span>wt</span></p>
 
-
+<p>length: <span></span> <input type="number" value="{{ cols }}"></input></p>
 <pre id="output"></pre>
 
 {% endblock %}
