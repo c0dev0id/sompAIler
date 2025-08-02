@@ -566,6 +566,14 @@ def create_app(test_config=None):
                     max_age=0,
                 )
 
+    @app.route('/sompyle/astlog')
+    @auth.login_required
+    def get_static_astlog():
+        return send_file(
+            procman.worker_directory_of_user(auth.current_user(), 'ast.log'),
+            mimetype='text/plain',
+        )
+    
     @app.route("/sompyle/analyze/tone-<int:number>")
     @auth.login_required
     def analyze_tone(number):
