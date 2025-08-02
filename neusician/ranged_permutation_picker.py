@@ -155,3 +155,39 @@ if __name__ == '__main__':
         for p in sorted(seen):
             print(f"{i}.", " ".join(str(i) for i in p))
             i += 1
+
+
+# ChatGPT from June 20, 2025
+#
+# def get_permutation(n, total, mins, maxs, k):
+#     offset = mins
+#     caps = [maxs[i] - mins[i] for i in range(n)]
+#     total -= sum(mins)
+#     result = []
+# 
+#     from functools import lru_cache
+# 
+#     @lru_cache(maxsize=None)
+#     def count_compositions(start, total_left):
+#         if start == n:
+#             return int(total_left == 0)
+#         count = 0
+#         max_val = min(caps[start], total_left)
+#         for v in range(max_val + 1):
+#             count += count_compositions(start + 1, total_left - v)
+#         return count
+# 
+#     for i in range(n):
+#         for xi in range(caps[i] + 1):
+#             if total - xi < 0:
+#                 break
+#             ways = count_compositions(i + 1, total - xi)
+#             if k < ways:
+#                 result.append(xi + offset[i])
+#                 total -= xi
+#                 break
+#             else:
+#                 k -= ways
+#     return result
+# 
+# print(get_permutation(5, 30, [3]*5, [7]*5, 92))
