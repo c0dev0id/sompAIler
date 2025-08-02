@@ -148,7 +148,7 @@ def create_app(test_config=None):
                       file=scorefile)
                     os.chmod(scorefile.name, stat.S_IREAD)
                     return redirect(
-                         f"/sompyle?yamlcode-id={random_id}", code=303
+                        url_for('public-yaml-acceptor', **{'yamlcode-id': random_id}), code=303
                     )
                     scorefile.close()
                 else:
@@ -346,7 +346,7 @@ def create_app(test_config=None):
                 procman.initialize_sompyler(user, yamlcode)
 
             if request.form["action"] == "rawanalysis":
-                return redirect("/sompyle/analyze", code=303)
+                return redirect(url_for('sompyler_static_code_analyzer'), code=303)
 
             status = procman.get_status(
                     user, request.form.get("w0mode", "ff"),
@@ -356,9 +356,9 @@ def create_app(test_config=None):
 
             if status['frozen'] is True:
                 if "file_accomplished" in status:
-                    return redirect("/sompyle/result.mp3", code=303)
+                    return redirect(url_for("send_audio_generated"), code=303)
                 elif request.form.get("w0mode") == "midi":
-                    return redirect("/sompyle/midi", code=303)
+                    return redirect(url_for("midi_exporter"), code=303)
                 elif "errors" in status:
                     response = make_response()
                     response.data = status["errors"] + (
@@ -372,7 +372,7 @@ def create_app(test_config=None):
                 else:
                     return "Missing score to synthesize", 409
             elif request.form["action"] == "sompyle":
-                return redirect("/sompyle/status", code=303)
+                return redirect(url_for("sompyler_status_report"), code=303)
             else:
                 return "Unknown action", 404
 

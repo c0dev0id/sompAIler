@@ -25,7 +25,7 @@
 <h2>Resulting audio</h2>
 
 <audio controls>
-<source src="/sompyle/result.mp3?{{ timestamp }}" type="audio/mp3" />
+<source src="{{ url_for('send_audio_generated') }}?{{ timestamp }}" type="audio/mp3" />
 </audio><input id="loopswitch" type="checkbox" onclick="this.previousElementSibling.loop = this.checked"><label for="loopswitch"> loop</label>
 
 <p>Please download the file if you find it worth that.</p>
@@ -65,7 +65,7 @@
 function update_progress () {
     progdiv = $('#progress');
     prog = $('#progress-bar');
-    $.getJSON('/sompyle/status.json', function (status) {         
+    $.getJSON('{{ url_for("statusjson") }}', function (status) {         
          prog.prop("value",
              status["reused"] + status["currently_rendered_notes"]
          );
@@ -82,7 +82,7 @@ function update_progress () {
          );
          if ( status["frozen"] === true ) {
              if ( "file_accomplished" in status ) {
-                 $('audio').get(0).src = '/sompyle/result.mp3?' + Date.now(); 
+                 $('audio').get(0).src = '{{ url_for("send_audio_generated") }}?' + Date.now(); 
                  progdiv.hide();
                  $("#progress + div").show();
              }
@@ -114,7 +114,7 @@ $(function() {
        if (m) {
 	   li.replaceWith("<li>" + text.replace(
                "note " + m[1],
-	       '<a href="/sompyle/analyze/tone-'
+	       '<a href="analyze/tone-'
                + m[1] + '">note ' + m[1] + '</a>') + "</li>"
            ).click(function(e) { e.stopImmediatePropagation() });
        }

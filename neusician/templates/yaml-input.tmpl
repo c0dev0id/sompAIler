@@ -3,7 +3,7 @@
 {% block title %}YAML input to sompyler ...{% endblock %}
 
 {% macro yamlform(yamlcode, user, quota) %}
-<form id="yamlform" method="POST" action="/sompyle/reserved-a-worker-for-tests" style="display: block; width:90%; margin:0 auto;">
+<form id="yamlform" method="POST" action="{{ url_for('private-yaml-acceptor') }}" style="display: block; width:90%; margin:0 auto;">
 <textarea style="width:100%;height:50vh" name="yamlcode" placeholder="plain YAML serialized data. See also hints below for simpler input on mobile devices">{{ yamlcode if yamlcode is not none }}</textarea>
 <br>
 <div style="line-height:2rem"><label for="w0mode">Reverberation and other modes:</label> <select name="w0mode">
@@ -23,7 +23,7 @@
 <button name="action" value="sompyle">Sompyle</button>
 <button name="action" title="(under construction)" value="rawanalysis">introspection and limited changes</button><button type="reset">Undo changes</button>
 {% if user %}
-<button name="action" value="delete" onclick="if (document.forms[0].yamlcode.value !== '') { alert('If input field is not empty, this is a no-op.'); return false }">Purge session</button>{% else %}<!-- public access, no further actions. --><a href="/sompyle/reserved-a-worker-for-tests">Have an account?</a>{% endif %}
+<button name="action" value="delete" onclick="if (document.forms[0].yamlcode.value !== '') { alert('If input field is not empty, this is a no-op.'); return false }">Purge session</button>{% else %}<!-- public access, no further actions. --><a href="{{ url_for('private-yaml-acceptor') }}">Have an account?</a>{% endif %}
 </div>
 </form>
 {% endmacro %}
@@ -47,7 +47,7 @@
 
 {{ yamlform(yamlcode, user, quota) }}
 
-<p>If you already have rendered above code in a former session, click <a href="status">status report</a> to access the file and other functions.</p>
+<p>If you already have rendered above code in a former session, click <a href="{{ url_for('sompyler_status_report') }}">status report</a> to access the file and other functions.</p>
 
 <h2>Hints on easier input</h2>
 <ul>

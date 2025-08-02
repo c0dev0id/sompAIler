@@ -33,7 +33,7 @@ th .ui-spinner { width: 4em; }
 
 <form method="get" action=""><p>cols: <input name="cols" type="number" value="{{ cols }}" /> | rows: <input name="rows" type="number" value="{{ rows }}" /> | base: <input name="base" type="number" value="{{ base }}" /> <button type="submit">Render table</button></p></form>
 
-<script src="/static/chain-tool.js">
+<script src="{{ url_for('static', filename='chain-tool.js') }}">
 </script>
 <table style="">
 <tr><th>#</th>{% for c in range(cols) %}<th>{{ c }}</th>{% endfor %}<th rowspan="{{ rows + 1 }}" style="width: 6em;">

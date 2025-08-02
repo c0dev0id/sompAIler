@@ -3,7 +3,7 @@
 {% block title %}Online Sompyler{% endblock %}
 {% block main %}
 
-<script type="text/javascript" src="/static/sompyler-code-analyzer.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='static/sompyler-code-analyzer.js' ) }}"></script>
 <script type="text/javascript">
 $(function () { initialize_ui({{ json }}); });
 </script>
