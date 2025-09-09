@@ -284,4 +284,15 @@ $(function () {
     $(".in-r").spinner();
     $(".in-u").spinner();
     $(".in-d").spinner();
+    $("fieldset input").on("change", function() {
+	$("#sompyler-text").text(
+	    ($(".tone-select input:checked").val() || "")
+	  + ($(".accidental-select input:checked").val() || "")
+	  + ($(".octave-select input:checked").val() || "")
+	  + ($(".chord-type-select input:checked").val()
+	  || $(".scale-select input:checked").val() || "")
+	);
+    }).checkboxradio({ icon: false });
+    $("fieldset span").controlgroup();
+    /* $("#mask").controlgroup(); */
 });

@@ -51,12 +51,86 @@ d: <input class="in-d" min="0"><br>
 {% endfor %}
 </table>
 
-<p id="tones">Tones: <span>C</span> <span>D</span> <span>E</span> <span>F</span> <span>G</span> <span>A</span> <span>B</span></p>
-<p id="accidentals">Accidentals: <span>b (flat)</span> <span>(natural)</span> <span># (sharp)</span></p>
-<p id="octaves">Octaves: <span>0</span> <span>1</span> <span>2</span> <span>3</span> <span>4</span> <span>5</span> <span>6</span> <span>7</span> <span>8</span></p>
-<p id="mask">Mask: <span>&amp;</span> <span>aug</span> <span>&amp;7</span> <span>&amp;7b5</span> <span>maj7</span> <span>m</span> <span>m7</span> <span>mmaj7</span> <span>dim</span> <span>dim7</span> <span>m7b5</span> | scales: <span>mj</span> <span>do</span> <span>ph</span> <span>ly</span> <span>ml</span> <span>mn</span> hm[ <span>1</span> <span>2</span> <span>3</span> <span>4</span> <span>5</span> <span>6</span> <span>7</span>] mm[ <span>1</span> <span>2</span> <span>3</span> <span>4</span> <span>5</span> <span>6</span> <span>7</span>] <span>lc</span> <span>wt</span></p>
+<fieldset id="tones">
+<label title="Base tones">
+<span class="tone-select">
+<label for="tone-c">C</label><input type="radio" name="tone" id="tone-c" value="C">
+<label for="tone-d">D</label><input type="radio" name="tone" id="tone-d" value="D">
+<label for="tone-e">E</label><input type="radio" name="tone" id="tone-e" value="E">
+<label for="tone-f">F</label><input type="radio" name="tone" id="tone-f" value="F">
+<label for="tone-g">G</label><input type="radio" name="tone" id="tone-g" value="G">
+<label for="tone-a">A</label><input type="radio" name="tone" id="tone-a" value="A">
+<label for="tone-b">B</label><input type="radio" name="tone" id="tone-b" value="B">
+</span>
+<span class="accidental-select">
+<label title="flat sign" for="acc-flat">♭</label><input type="radio" name="acc" id="acc-flat" value="b">
+<label title="natural sign" for="acc-natural">♮</label><input type="radio" name="acc" id="acc-natural" value="">
+<label title="sharp sign" for="acc-sharp">♯</label><input type="radio" name="acc" id="acc-sharp" value="#">
+</span>
+<br>
+<span class="octave-select">
+<label for="oct-0">0</label><input type="radio" name="octave" id="oct-0" value="0">
+<label for="oct-1">1</label><input type="radio" name="octave" id="oct-1" value="1">
+<label for="oct-2">2</label><input type="radio" name="octave" id="oct-2" value="2">
+<label for="oct-3">3</label><input type="radio" name="octave" id="oct-3" value="3">
+<label for="oct-4">4</label><input type="radio" name="octave" id="oct-4" value="4">
+<label for="oct-5">5</label><input type="radio" name="octave" id="oct-5" value="5">
+<label for="oct-6">6</label><input type="radio" name="octave" id="oct-6" value="6">
+<label for="oct-7">7</label><input type="radio" name="octave" id="oct-7" value="7">
+<label for="oct-8">8</label><input type="radio" name="octave" id="oct-8" value="8">
+</span>
+</fieldset>
+<fieldset id="mask">
+<label>Mask</label>
+<span class="chord-type-select">
+<label for="ch-maj">&amp;</label><input type="radio" name="mask" id="ch-maj" value="&amp;">
+<label for="ch-aug">aug</label><input type="radio" name="mask" id="ch-aug" value="aug">
+<label for="ch-7">&amp;7</label><input type="radio" name="mask" id="ch-7" value="&amp;7">
+<label for="ch-maj7">maj7</label><input type="radio" name="mask" id="ch-maj7" value="maj7">
+<label for="ch-m">m</label><input type="radio" name="mask" id="ch-m" value="m">
+<label for="ch-m7">m7</label><input type="radio" name="mask" id="ch-m7" value="m7">
+<label for="ch-mmaj7">mmaj7</label><input type="radio" name="mask" id="ch-mmaj7" value="mmaj7">
+<label for="ch-dim">dim</label><input type="radio" name="mask" id="ch-dim" value="dim">
+<label for="ch-dim7">dim7</label><input type="radio" name="mask" id="ch-dim7" value="dim7">
+<label for="ch-m7b5">m7b5</label><input type="radio" name="mask" id="ch-m7b5" value="m7b5">
+</span>
+scales:
+<span class="scale-select">
+<label for="scale-mj">mj</label><input type="radio" name="mask" id="scale-mj" value="mj">
+<label for="scale-do">do</label><input type="radio" name="mask" id="scale-do" value="do">
+<label for="scale-ph">ph</label><input type="radio" name="mask" id="scale-ph" value="ph">
+<label for="scale-ly">ly</label><input type="radio" name="mask" id="scale-ly" value="ly">
+<label for="scale-ml">ml</label><input type="radio" name="mask" id="scale-ml" value="ml">
+<label for="scale-mn">mn</label><input type="radio" name="mask" id="scale-mn" value="mn">
+</span>
+hm[<span class="scale-select">
+<label for="scale-hm1">1</label><input type="radio" name="mask" id="scale-hm1" value="hm1">
+<label for="scale-hm2">2</label><input type="radio" name="mask" id="scale-hm2" value="hm2">
+<label for="scale-hm3">3</label><input type="radio" name="mask" id="scale-hm3" value="hm3">
+<label for="scale-hm4">4</label><input type="radio" name="mask" id="scale-hm4" value="hm4">
+<label for="scale-hm5">5</label><input type="radio" name="mask" id="scale-hm5" value="hm5">
+<label for="scale-hm6">6</label><input type="radio" name="mask" id="scale-hm6" value="hm6">
+<label for="scale-hm7">7</label><input type="radio" name="mask" id="scale-hm7" value="hm7">
+</span>]
+mm[<span class="scale-select">
+<label for="scale-mm1">1</label><input type="radio" name="mask" id="scale-mm1" value="mm1">
+<label for="scale-mm2">2</label><input type="radio" name="mask" id="scale-mm2" value="mm2">
+<label for="scale-mm3">3</label><input type="radio" name="mask" id="scale-mm3" value="mm3">
+<label for="scale-mm4">4</label><input type="radio" name="mask" id="scale-mm4" value="mm4">
+<label for="scale-mm5">5</label><input type="radio" name="mask" id="scale-mm5" value="mm5">
+<label for="scale-mm6">6</label><input type="radio" name="mask" id="scale-mm6" value="mm6">
+<label for="scale-mm7">7</label><input type="radio" name="mask" id="scale-mm7" value="mm7">
+</span>]
+<span class="scale-select">
+<label for="scale-lc">lc</label><input type="radio" name="mask" id="scale-lc" value="lc">
+<label for="scale-wt">wt</label><input type="radio" name="mask" id="scale-wt" value="wt">
+<label for="scale-wht">wht</label><input type="radio" name="mask" id="scale-wht" value="wht">
+<label for="scale-hwt">hwt</label><input type="radio" name="mask" id="scale-hwt" value="hwt">
+</span>
+</fieldset>
 
 <p>length: <span></span> <input type="number" value="{{ cols }}"></input></p>
-<pre id="output"></pre>
+
+<pre id="sompyler-text"></pre>
 
 {% endblock %}
