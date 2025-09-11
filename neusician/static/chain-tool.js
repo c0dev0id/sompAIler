@@ -30,6 +30,66 @@ function Counter() {
     }
 }
 
+function write_lines(table) {
+    console.log("write lines");
+    var lane_ids = table.find("tbody").data("laneids");
+    var cols = table.find("tbody").data("cols");
+    if (!lane_ids) return "null";
+    var base = $("input[name=base]").val();
+    var maxheight = $("input[name=rows]").val() - base;
+    var lines = [], last = 0;
+    var col = 0, row = -1;
+    while ( true ) {
+	if ( col % cols == 0 ) {
+	    col = 0;
+	    last = 0;
+	    row++;
+	}
+	if ( lane_ids.length-1 == cols * row + col ) break;
+	else if ( !col ) lines.push([0]);	
+	current = lane_ids[ cols * row + col ] || 0;
+	subarr = lines.at(-1);
+	if ( current == last ) {
+	    subarr[subarr.length-1] += current ? 1 : -1;
+        }
+	else {
+	    subarr.push(current ? 1 : -1);
+	    last = current;
+	}
+	col++;
+    }
+    lines.forEach(function (line, i) {
+	var out = [];
+        line.forEach(function (cur) {
+	    if (cur == -1) {
+		out.push(".");
+	    }
+	    else if (cur == -cols) {
+		lines[i] = null;
+		return;
+	    }
+	    else if (cur < 0 && cur > -cols) {
+		out.push(`.${-cur}`);
+	    }
+	    else if (cur == 1) {
+		out.push("o");
+	    }
+	    else if (cur == 2) {
+		out.push("o_");
+	    }
+	    else if (cur == 3) {
+		out.push("o__");
+	    }
+            else if (cur > 3) {
+		out.push(`o_${cur-1}`);
+            }
+	});
+	maxheight--;
+	lines[i] &&= maxheight + " " + out.join("");
+    });
+    return "\n- " + lines.filter((el) => !!el).join("\n- "); 
+}
+
 function change_state(table, new_state) {
     console.log("Change state to " + new_state);
     var table = table.find("tbody");
@@ -286,11 +346,12 @@ $(function () {
     $(".in-d").spinner();
     $("fieldset input").on("change", function() {
 	$("#sompyler-text").text(
-	    ($(".tone-select input:checked").val() || "")
+	  "pattern: " + write_lines($("table"))
+	  + "\n0: <pattern:" 
+	  + ($(".tone-select input:checked").val() || "")
 	  + ($(".accidental-select input:checked").val() || "")
 	  + ($(".octave-select input:checked").val() || "")
-	  + ($(".chord-type-select input:checked").val()
-	  || $(".scale-select input:checked").val() || "")
+	  + ($(".chord-type-select input:checked").val() || $(".scale-select input:checked").val() || "")
 	);
     }).checkboxradio({ icon: false });
     $("fieldset span").controlgroup();
