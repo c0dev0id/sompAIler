@@ -30,6 +30,34 @@ function Counter() {
     }
 }
 
+class Lane {
+    /* pitches, lengths */
+    constructor() {
+	this.pitches = [];
+	this.lengths = [];
+    }
+
+    add(pitch, length) {
+	this.pitches.push(pitch);
+	this.lengths.push(length);
+    }
+}
+
+class LaneFrame {
+    /* Lane-Id -> Offsets -> Lanes, Next */
+    constructor() {
+	this.lanes = {}
+    }
+    add_lane(numid, offset, pitch, length) {
+	if ( numid in this.lanes ) {
+	    // this.lanes[numid][offset].add ...
+	}
+	else {
+	    this.lanes[numid] = { offset: [], "Next": null, "MaxLen": 0 }
+	}
+    }
+}
+
 function write_lines(table) {
     console.log("write lines");
     var lane_ids = table.find("tbody").data("laneids");
@@ -168,6 +196,14 @@ function change_state(table, new_state) {
             if ( $(this).hasClass("marked") ) {
 		console.log(`${linc}: L${leftroom} T${toproom} R${rightroom} B${bottomroom}`);
                 $(this).addClass("active-lane");
+	        if ( strl ) $(this).addClass("str-left merge-left" );
+	        if ( stru ) $(this).addClass("str-top merge-top" );
+	        if ( strr ) $(this).addClass("str-right merge-right" );
+	        if ( strd ) $(this).addClass("str-bottom merge-bottom" );
+	        if ( dgne || dgse ) $(this).addClass("merge-right" );
+	        if ( dgnw || dgsw ) $(this).addClass("merge-left" );
+	        if ( dgnw || dgne ) $(this).addClass("merge-top" );
+	        if ( dgsw || dgse ) $(this).addClass("merge-bottom" );
             }
             else {
 		if (touched_lanes.includes(lane_ids[linc]))
@@ -176,138 +212,60 @@ function change_state(table, new_state) {
                     $(this).removeClass("active-lane");
                 return;
             }
-
-            if ( leftroom && (dgsw || strl || dgnw) ) {
-                if (strl) {
-                    $(this).addClass("merge-left");
-                    strl.addClass("merge-right str-right");
-		    indicator += 1;
-                }
-                else {
-                    if ( !stru && !strd ) $(this).addClass("merge-left");
-                    if ( dgsw ) {
-			dgsw.addClass("merge-right");
-			indicator += 2;
-		    }
-                    if ( dgnw ) {
-		    	dgnw.addClass("merge-right");
-			indicator += 4;
-		    }
-                }
-            }
-
-            if ( toproom && (dgnw || stru || dgne) ) {
-                if (stru) {
-                    $(this).addClass("merge-top");
-                    stru.addClass("merge-bottom str-bottom");
-		    indicator += 8;
-                }
-                else {
-                    if ( !strl && !strr ) $(this).addClass("merge-top");
-                    if ( dgnw ) {
-		    	dgnw.addClass("merge-bottom");
-			indicator += 16;
-		    }
-                    if ( dgne ) {
-		    	dgne.addClass("merge-bottom");
-			indicator += 32;
-		    }
-                }
-            }
-
-            if ( rightroom && (dgne || strr || dgse) ) {
-                if (strr) {
-		    $(this).addClass("merge-right");
-                    strr.addClass("merge-left str-left");
-		    indicator += 64;
-                }
-                else {
-                    if ( !stru && !strd ) $(this).addClass("merge-right");
-                    if ( dgne ) {
-		    	dgne.addClass("merge-left");
-			indicator += 128;
-		    }
-                    if ( dgse ) {
-		    	dgse.addClass("merge-left");
-			indicator += 256;
-		    }
-                }
-            }
-
-            if ( bottomroom && (dgse || strd || dgsw) ) {
-                if (strd) {
-		    $(this).addClass("merge-bottom");
-                    strd.addClass("merge-top str-top");
-		    indicator += 512;
-                }
-                else {
-                    if ( !strl && !strr ) $(this).addClass("merge-bottom");
-                    if ( dgse ) {
-		    	dgse.addClass("merge-top");
-			indicator += 1024;
-		    }
-                    if ( dgsw ) {
-		        dgsw.addClass("merge-top");
-			indicator += 2048;
-		    }
-                }
-            }
-
-            console.log(`indicator: ${indicator}`);
-
         }
 
         else if ( new_state == false ) {
             if ( !$(this).hasClass("marked") ) return;
-
-            if ( strl ) { 
-		strl.removeClass("str-right");
-                if ( !stru || !strd ) strl.removeClass("merge-right");
-	    }
-
-            if ( dgnw ) {
-               if (!strl && !is_touched(linc + 2 * i_left) ) dgnw.removeClass("merge-bottom");
-               if (!stru && !is_touched(linc + 2 * i_top)  ) dgnw.removeClass("merge-right");
-            }
-
-            if ( stru ) {
-                stru.removeClass("str-bottom");
-                if ( !strl || !strr ) stru.removeClass("merge-bottom");
-            }
-
-            if ( dgne ) {
-               if ( !strr && !is_touched(linc + 2 * i_right) ) dgne.removeClass("merge-bottom");
-               if ( !stru && !is_touched(linc + 2 * i_top)   ) dgne.removeClass("merge-left");
-            }
-
-            if ( strr ) {
-                strr.removeClass("str-left");
-                if ( !stru || !strd ) strr.removeClass("merge-left");
-	    }
-
-            if ( dgse ) {
-               if ( !strr && !is_touched(linc + 2 * i_right) ) dgse.removeClass("merge-top");
-               if ( !strd && !is_touched(linc + 2 * i_bottom)) dgse.removeClass("merge-left");
-            }
-
-            if ( strd ) {
-                strd.removeClass("str-top");
-                if ( !strl || !strr ) strd.removeClass("merge-top");
-	    }
-
-            if ( dgsw ) {
-               if ( !strl && !is_touched(linc + 2 * i_left)   ) dgsw.removeClass("merge-top");
-               if ( !strd && !is_touched(linc + 2 * i_bottom )) dgsw.removeClass("merge-right");
-            }
-
             $(this).removeClass("merge-left str-left merge-right str-right merge-top str-top merge-bottom str-bottom active-lane");
 
         }
+
+	if (dgnw) {
+	    dgnw.toggleClass("str-right", !!stru );
+	    dgnw.toggleClass("merge-right", new_state || !!stru || !!strl || is_touched(linc + 2 * i_top) );
+	    dgnw.toggleClass("str-bottom", !!strl );
+	    dgnw.toggleClass("merge-bottom", new_state || !!stru || !!strl || is_touched(linc + 2 * i_left) );
+	}
+        if (stru) {
+	    stru.toggleClass("str-bottom", new_state );
+	    stru.toggleClass("merge-bottom", new_state || !!strr || !!strl)
+	}
+	if (dgne) {
+	    dgne.toggleClass("str-left", !!stru );
+	    dgne.toggleClass("merge-left", new_state || !!stru || !!strr || is_touched(linc + 2 * i_top) );
+	    dgne.toggleClass("str-bottom", !!strr);
+	    dgne.toggleClass("merge-bottom", new_state || !!stru || !!strr || is_touched(linc + 2 * i_right) );
+	}
+        if (strr) {
+	    strr.toggleClass("str-left", new_state );
+	    strr.toggleClass("merge-left", new_state || !!stru || !!strd);
+	}
+	if (dgse) {
+            dgse.toggleClass("str-left", !!strd);
+	    dgse.toggleClass("merge-left", new_state || !!strd || !!strr || is_touched(linc + 2 * i_bottom) );
+	    dgse.toggleClass("str-top", !!strr );
+	    dgse.toggleClass("merge-top", new_state || !!strd || !!strr || is_touched(linc + 2 * i_right) );
+	}
+	if (strd) {
+	    strd.toggleClass("str-top", new_state );
+	    strd.toggleClass("merge-top", new_state || !!strr || !!strl );
+	}
+	if (dgsw) {
+	    dgsw.toggleClass("str-right", !!strd );
+	    dgsw.toggleClass("merge-right", new_state || !!strd || !!strl || is_touched(linc + 2 * i_bottom) );
+	    dgsw.toggleClass("str-top", !!strl );
+	    dgsw.toggleClass("merge-top", new_state || !!strd || !!strl || is_touched(linc + 2 * left) );
+	}
+	if (strl) {
+	    strl.toggleClass("str-right", new_state );
+            strl.toggleClass("merge-right", new_state || !!stru || !!strd );
+	}
 
         $(this).removeClass("marked");
 
     });
     touched.reset(min_lane_id);
+    if ( $("input:radio[name=tone]:checked").length > 1 ) write_lines(table.parent());
 }
 
 $(function () {
