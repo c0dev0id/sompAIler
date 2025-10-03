@@ -10,24 +10,28 @@ p span { border: 1px solid lightgrey; }
 td { height: 1.5em; min-width: 1.5em; }
 td.marked, td:hover { outline: 2px outset orange; }
 td.recently-marked { background-color: orange; }
-table { border-collapse: collapse; border: none;  }
+table { border-collapse: collapse; }
 tr { margin: 0; padding: 0; }
-td { margin: 0; padding: 0; } /* border:3px inset grey; */
-td div { background-color: lightgrey; height: 100%; width: 100%; border-radius: 40%; margin: 0; }
+td { margin: 0; padding: bottom; border: 1px solid grey; } /* border:3px inset grey; */
+td div { background-color: lightgrey; height: 100%; width: 100%; border-radius: 40%; margin: 2px; }
 td.active-lane div { background-color: grey; }
 td.active-lane.recently-marked div { background-color: #444; }
 td.merge-left { margin-left: 0; padding-left: 0; border-left: none; }
-td.merge-left:is(.merge-top:not(.str-left, .str-top), .str-left, .str-top) div { border-top-left-radius: 0; }
-td.merge-left:is(.merge-bottom:not(.str-left, .str-bottom), .str-left, .str-bottom) div { border-bottom-left-radius: 0; }
+td.merge-left div { margin-left: 0; }
+td:is(.edge-top-left, .str-left, .str-top) div { border-top-left-radius: 0; }
+td:is(.edge-bottom-left, .str-left, .str-bottom) div { border-bottom-left-radius: 0; }
 td.merge-right { margin-right: 0; padding-right: 0; border-right: none; }
-td.merge-right:is(.merge-top:not(.str-right, .str-top), .str-right, .str-top) div { border-top-right-radius: 0; }
-td.merge-right:is(.merge-bottom:not(.str-right, .str-bottom), .str-right, .str-bottom) div { border-bottom-right-radius: 0; }
+td.merge-right div { margin-right: 0; }
+td:is(.edge-top-right, .str-right, .str-top) div { border-top-right-radius: 0; }
+td:is(.edge-bottom-right, .str-right, .str-bottom) div { border-bottom-right-radius: 0; }
 td.merge-top { margin-top: 0; padding-top: 0; border-top: none; }
-td.merge-top:is(.merge-left:not(.str-top, .str-left), .str-top, .str-left) div { border-top-left-radius: 0; }
-td.merge-top:is(.merge-right:not(.str-top, .str-right), .str-top, .str-right) div { border-top-right-radius: 0; }
-td.merge-bottom { margin-bottom: 0; padding-bottom: 0; border-right: none; }
-td.merge-bottom:is(.merge-left:not(.str-bottom, .str-left), .str-bottom, .str-left) div { border-bottom-left-radius: 0; }
-td.merge-bottom:is(.merge-right:not(.str-bottom, .str-right), .str-bottom, .str-right) div { border-bottom-right-radius: 0; }
+td.merge-top div { margin-top: 0; }
+td:is(.edge-top-left, .str-top, .str-left) div { border-top-left-radius: 0; }
+td:is(.edge-top-right, .str-top, .str-right) div { border-top-right-radius: 0; }
+td.merge-bottom { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+td.merge-bottom div { margin-bottom: 0; }
+td:is(.edge-bottom-left, .str-bottom, .str-left) div { border-bottom-left-radius: 0; }
+td:is(.edge-bottom-right, .str-bottom, .str-right) div { border-bottom-right-radius: 0; }
 th .ui-spinner { width: 4em; }
 </style>
 

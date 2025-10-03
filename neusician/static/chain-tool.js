@@ -200,6 +200,10 @@ function change_state(table, new_state) {
 	        if ( stru ) $(this).addClass("str-top merge-top" );
 	        if ( strr ) $(this).addClass("str-right merge-right" );
 	        if ( strd ) $(this).addClass("str-bottom merge-bottom" );
+		if ( dgnw ) $(this).addClass("edge-top-left");
+		if ( dgsw ) $(this).addClass("edge-bottom-left");
+		if ( dgne ) $(this).addClass("edge-top-right");
+		if ( dgse ) $(this).addClass("edge-bottom-right");
 	        if ( dgne || dgse ) $(this).addClass("merge-right" );
 	        if ( dgnw || dgsw ) $(this).addClass("merge-left" );
 	        if ( dgnw || dgne ) $(this).addClass("merge-top" );
@@ -221,6 +225,7 @@ function change_state(table, new_state) {
         }
 
 	if (dgnw) {
+	    dgnw.toggleClass("edge-bottom-right", new_state);
 	    dgnw.toggleClass("str-right", !!stru );
 	    dgnw.toggleClass("merge-right", new_state || !!stru || !!strl || is_touched(linc + 2 * i_top) );
 	    dgnw.toggleClass("str-bottom", !!strl );
@@ -231,6 +236,7 @@ function change_state(table, new_state) {
 	    stru.toggleClass("merge-bottom", new_state || !!strr || !!strl)
 	}
 	if (dgne) {
+	    dgne.toggleClass("edge-bottom-left", new_state);
 	    dgne.toggleClass("str-left", !!stru );
 	    dgne.toggleClass("merge-left", new_state || !!stru || !!strr || is_touched(linc + 2 * i_top) );
 	    dgne.toggleClass("str-bottom", !!strr);
@@ -241,6 +247,7 @@ function change_state(table, new_state) {
 	    strr.toggleClass("merge-left", new_state || !!stru || !!strd);
 	}
 	if (dgse) {
+	    dgse.toggleClass("edge-top-left", new_state);
             dgse.toggleClass("str-left", !!strd);
 	    dgse.toggleClass("merge-left", new_state || !!strd || !!strr || is_touched(linc + 2 * i_bottom) );
 	    dgse.toggleClass("str-top", !!strr );
@@ -251,6 +258,7 @@ function change_state(table, new_state) {
 	    strd.toggleClass("merge-top", new_state || !!strr || !!strl );
 	}
 	if (dgsw) {
+	    dgsw.toggleClass("edge-top-right", new_state);
 	    dgsw.toggleClass("str-right", !!strd );
 	    dgsw.toggleClass("merge-right", new_state || !!strd || !!strl || is_touched(linc + 2 * i_bottom) );
 	    dgsw.toggleClass("str-top", !!strl );
