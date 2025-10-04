@@ -310,18 +310,30 @@ $(function () {
     $(".in-r").spinner();
     $(".in-u").spinner();
     $(".in-d").spinner();
-    $("fieldset input").on("change", update_sompyler_code).checkboxradio({ icon: false });
+    $("#voicer, #length").on("change", update_sompyler_code).spinner();
+    $("fieldset span input").on("change", update_sompyler_code).checkboxradio({ icon: false });
     $("fieldset span").controlgroup();
     /* $("#mask").controlgroup(); */
 });
 
 function update_sompyler_code() {
+    var voiced = $("#voicer").val(),
+	length = parseInt($("#length").val()),
+	orig_length = parseInt($("#length").get(0).defaultValue);
+    if ( voiced == 0 ) { voiced = ""; }
+    else { voiced = `+${voiced}k` }
+    if ( length % orig_length && orig_length % length ) {
+	length = ` ${orig_length}:${length} `;
+    }
+    else if ( length == orig_length ) { length = ""; }
+    else length = ` ${length} `
     $("#sompyler-text").text(
       "pattern: " + write_lines($("table"))
-      + "\n0: <pattern:" 
+      + "\n0: <" + length + "pattern:" 
       + ($(".tone-select input:checked").val() || "")
       + ($(".accidental-select input:checked").val() || "")
       + ($(".octave-select input:checked").val() || "")
       + ($(".chord-type-select input:checked").val() || $(".scale-select input:checked").val() || "")
+      + voiced
     );
 }
