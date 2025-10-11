@@ -1,0 +1,21 @@
+{% extends "base.tmpl" %}
+{% block heading %}Interactive demos{% endblock %}
+{% block title %}Render shapes{% endblock %}
+
+{% block main %}
+
+<div id="result"></div>
+
+<form method="post" action=""><p>
+1: <input name="shape1" type="text" value="{{ shape1 }}" /><br>
+2: <input name="shape2" type="text" value="{{ shape2 }}" /><br>
+intersteps: <input type="number" name="intersteps" value="{{ intersteps }}" min="0" max="3"><br>
+3: <input name="shape3" type="text" value="{{ shape3 }}" /><br>
+4: <input name="shape4" type="text" value="{{ shape4 }}" /><br>
+<input type="submit" name="get" value="graph">
+</p>
+</form>
+
+<script src="{{ url_for('static', filename='render-shapes.js') }}"></script>
+
+{% endblock %}

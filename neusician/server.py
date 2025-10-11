@@ -576,6 +576,41 @@ def create_app(test_config=None):
             mimetype='text/plain',
         )
     
+    @app.route("/sompyle/render-shapes", methods=("GET", "POST"))
+    @auth.login_required
+    def render_shapes():
+        shapes = []
+        params = request.form if request.method == "POST" else request.args
+        for s in range(4):
+            s = 'shape' + str(s+1)
+            if params.get(s):
+                shapes.append(params[s])
+        intersteps = params.get('intersteps') or 0
+        written_file = procman.worker_directory_of_user(auth.current_user(), 'rendered-shapes.svg')
+        if request.form:
+            try:
+                procman.call_external('render-shapes',
+                    *shapes, f"--steps={intersteps}",
+                    f"--outfile={written_file}"
+                )
+            except subprocess.CalledProcessError as e:
+                stderr = e.stderr.decode('utf-8')
+                if (m := re.search(r"^(?=Sompyler\b)", stderr, re.MULTILINE)):
+                    stderr = stderr[m.start():]
+                raise exceptions.BadRequest(stderr)
+            return send_file(
+                    written_file,
+                    mimetype="image/svg+xml",
+                    max_age=0
+                )
+        else:
+            return render_template('render-shapes.tmpl',
+                shape1=(shapes[0] if shapes else ''),
+                shape2=(shapes[1] if len(shapes) > 1 else ''),
+                shape3=(shapes[2] if len(shapes) > 2 else ''),
+                shape4=(shapes[3] if len(shapes) > 3 else ''),
+                intersteps=intersteps,
+            )
     @app.route("/sompyle/analyze/tone-<int:number>")
     @auth.login_required
     def analyze_tone(number):
