@@ -9,6 +9,7 @@ con_path = None
 LINE_LIMIT=100000
 STD_RESOURCES = 10**9
 SOMPYLER = None
+MIDIEXP = None
 SOMPYLER_LIMITS = None
 SUBDIR="neusician"
 EXT_PUBLISH_CMD=""
@@ -312,6 +313,19 @@ def get_status(user, w0mode='ff', tail_log=False, quota=100, workers=None):
         'errors': errors,
     }
 
+def call_external(*args, user=False):
+    my_env = os.environ.copy()
+    my_env['SOMPYLER'] = SOMPYLER
+    if user is not False:
+        userdir = worker_directory_of_user(user)
+        for i, arg in enumerate(args):
+            if not '$USERDIR' in arg:
+                continue
+            args[i] = arg.replace('$USERDIR', userdir)
+    return subprocess.run(args,
+        env={**os.environ, 'SOMPYLER': SOMPYLER},
+        capture_output=True, check=True
+    )
 
 def midi_export(file_name, ppqn, voices):
     try:
@@ -319,6 +333,7 @@ def midi_export(file_name, ppqn, voices):
           [ 'pre2midi', file_name, str(ppqn), voices,
             os.path.join(os.path.dirname(file_name), "result.mid")
           ],
+          env={**os.environ, 'MIDIEXP': MIDIEXP},
           capture_output=True, check=True
         )
     except subprocess.CalledProcessError as e:

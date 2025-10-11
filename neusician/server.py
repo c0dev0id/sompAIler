@@ -15,6 +15,7 @@ from flask import (
         send_file, url_for
     )
 from flask_httpauth import HTTPBasicAuth
+from werkzeug import exceptions
 from werkzeug.security import generate_password_hash, check_password_hash
 
 import subprocess
@@ -535,8 +536,9 @@ def create_app(test_config=None):
     def midi_exporter():
         user = auth.current_user()
         premidi_score = procman.worker_directory_of_user(user, "premidi.txt")
+        procman.MIDIEXP = app.config['MIDIEXP']
         if not os.path.exists(premidi_score):
-            return "Please render sompyler code to MIDI first", 424
+            return "Please render sompyler code to PREMIDI first", 424
         with open(premidi_score) as ps:
             voices = []
             for line in ps:
@@ -578,10 +580,8 @@ def create_app(test_config=None):
     @auth.login_required
     def analyze_tone(number):
         user = auth.current_user()
-        proc = subprocess.run(
-                ['analyze-tone',
-                    procman.worker_directory_of_user(auth.current_user()), str(number)
-                ], capture_output=True, check=True
+        proc = procman.call_external(
+                'analyze-tone', '$USERDIR', str(number), user=user,
             )
         return render_template(
             "tone-analyzer.tmpl",
@@ -633,6 +633,13 @@ def create_app(test_config=None):
             last_lines=exception.tail_log()
         ), 400
 
+    @app.errorhandler(exceptions.BadRequest)
+    def badrequest_error(exception):
+        return render_template(
+            "400.tmpl",
+            error_message=exception.description
+        ), 400
+    
     @app.teardown_request
     def close_connection(exception):
         procman.close_connection()
