@@ -39,6 +39,7 @@ div.tone-select, div.accidental-select, div.octave-select { float: left; text-al
 
 <form method="get" action=""><p>cols: <input name="cols" type="number" value="{{ cols }}" /> | rows: <input name="rows" type="number" value="{{ rows }}" /> | base: <input name="base" type="number" value="{{ base }}" /> <button type="submit">Render table</button></p></form>
 
+<p>Pattern name: <input type="text" id="pname" placeholder="name" value="pattern"></p>
 <script src="{{ url_for('static', filename='chain-tool.js') }}">
 </script>
 <table style="">
@@ -152,6 +153,6 @@ mm[<span class="scale-select">
 </fieldset>
 <p>Voicing: <input id="voicer" value="0"> | length: <input id="length" value="{{ cols }}"></input></p>
 
-<pre id="sompyler-text"></pre>
+<textarea id="sompyler-text"></textarea> <button id="copy-text">Copy to clipboard</button>
 
 {% endblock %}

@@ -89,31 +89,19 @@ function write_lines(table) {
     lines.forEach(function (line, i) {
 	var out = [];
         line.forEach(function (cur) {
-	    if (cur == -1) {
-		out.push(".");
-	    }
-	    else if (cur == -cols) {
+	    if (cur == -cols) {
 		lines[i] = null;
 		return;
 	    }
-	    else if (cur < 0 && cur > -cols) {
-		out.push(`.${-cur}`);
+	    else if (cur < 0) {
+		out.push('.'.repeat(-cur));
 	    }
-	    else if (cur == 1) {
-		out.push("o");
+	    else if (cur > 0) {
+		out.push("o" + '_'.repeat(cur-1));
 	    }
-	    else if (cur == 2) {
-		out.push("o_");
-	    }
-	    else if (cur == 3) {
-		out.push("o__");
-	    }
-            else if (cur > 3) {
-		out.push(`o_${cur-1}`);
-            }
 	});
 	maxheight--;
-	lines[i] &&= maxheight + " " + out.join("");
+	lines[i] &&= maxheight.toString().padStart(2) + " " + out.join("");
     });
     return "\n- " + lines.filter((el) => !!el).join("\n- "); 
 }
@@ -313,13 +301,22 @@ $(function () {
     $("#voicer, #length").on("change", update_sompyler_code).spinner();
     $("fieldset span input").on("change", update_sompyler_code).checkboxradio({ icon: false });
     $("fieldset span").controlgroup();
+    $("#copy-text").click(function () {
+	    var copyText = document.getElementById("sompyler-text");
+            // Select the text field
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // For mobile devices
+            // Copy the text inside the text field
+            navigator.clipboard.writeText(copyText.value);
+    });
     /* $("#mask").controlgroup(); */
 });
 
 function update_sompyler_code() {
     var voiced = $("#voicer").val(),
 	length = parseInt($("#length").val()),
-	orig_length = parseInt($("#length").get(0).defaultValue);
+	orig_length = parseInt($("#length").get(0).defaultValue),
+	name = $("#pname").val() || "pattern";
     if ( voiced == 0 ) { voiced = ""; }
     else { voiced = `+${voiced}k` }
     if ( length % orig_length && orig_length % length ) {
@@ -328,12 +325,13 @@ function update_sompyler_code() {
     else if ( length == orig_length ) { length = ""; }
     else length = ` ${length} `
     $("#sompyler-text").text(
-      "pattern: " + write_lines($("table"))
-      + "\n0: <" + length + "pattern:" 
+      `${name}: ` + write_lines($("table"))
+      + "\n0: <" + length + `${name}:` 
       + ($(".tone-select input:checked").val() || "")
       + ($(".accidental-select input:checked").val() || "")
       + ($(".octave-select input:checked").val() || "")
       + ($(".chord-type-select input:checked").val() || $(".scale-select input:checked").val() || "")
       + voiced
     );
+
 }
