@@ -1,0 +1,13 @@
+body {
+	color: rgb(148, 155, 168);
+	background-color: #111;
+}
+
+a:link {
+	color: lightblue;
+}
+
+textarea {
+	background-color: #bbb;
+	font-family:monospace;
+}

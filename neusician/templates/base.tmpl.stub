@@ -4,15 +4,17 @@
                 <meta name="Content-Type" content="text/html; charset=utf-8" />
                 <meta name="viewport" content="initial-scale=1, minimum-scale=1" />
 		<title>My Website – {% block title %}(title?){% endblock %}</title>
+                <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}" />
                 <link rel="stylesheet" href="{{ url_for('static', filename='jquery-ui-1.12.1.custom/jquery-ui.min.css') }}" />
 		<link rel="stylesheet" href="{{ url_for('static', filename='layout.css') }}" />
+                <script type="text/javascript" src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}"></script>
                 <script type="text/javascript" src="{{ url_for('static', filename='jquery-3.5.1.min.js') }}"></script>
                 <script type="text/javascript" src="{{ url_for('static', filename='jquery-ui-1.12.1.custom/jquery-ui.js') }}"></script>
                 <style>{% block css %}{% endblock %}</style>
 	</head>
 	<body>
 		<header>
-			{% block header %}<!-- INSERT HEADER CODE HERE -->{% endblock %}
+			{% block header %}<a href="{{ url_for('index') }}">Functions</a><!-- INSERT HEADER CODE HERE -->{% endblock %}
 		</header>
 		{% if user is defined %}
 		<div class="whoiam">{{ user }} [<a href="{{ url_for('logout_user') }}">Logout</a> | <a href="{{ url_for('change_password') }}">Reset password</a>]</div>
