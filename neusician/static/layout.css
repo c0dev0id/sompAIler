@@ -7,6 +7,10 @@ a:link {
 	color: lightblue;
 }
 
+input, select, button, .ui-button, .ui-spinner-input {
+       background: lightgrey;
+}
+
 textarea {
 	background-color: #bbb;
 	font-family:monospace;
