@@ -19,6 +19,7 @@
  <option value="reverb">free-style "room" definition s. score section #1</option>
  </optgroup>
 </select>
+<label for="measures"><nobr>Render only measure numbers <input name="only-measures" id="measures" placeholder="if not all"></nobr>
 {% if quota != '' %}<nobr><label for="cap-quota">Use up to </label><input name="quota" id="cap-quota" type="number" style="width: 3em" value="{{ quota }}" max="{{ quota }}">% of quota</nobr>{% endif %}
 <button name="action" value="sompyle">Sompyle</button>
 <button name="action" title="(under construction)" value="rawanalysis">introspection and limited changes</button><button type="reset">Undo changes</button>

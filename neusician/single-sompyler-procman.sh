@@ -58,8 +58,13 @@ if [ "${IND-0}" -gt "${OUTD-0}" ]; then
 		   W0MODE="" ;;
 	esac
 	: > "${T}/status"
+	declare -a OPT_PARAMS
+	if [ -n "$ONLY_MEASURES" ]; then
+		OPT_PARAMS+=("--only-measures $ONLY_MEASURES")
+		unset ONLY_MEASURES
+	fi
         . venv/bin/activate
-	./scripts/sompyle -v "--workers=${WORKERS_PER_USER-1}" "${T}/score" "$OUTFILE" $W0MODE > "${T}/OUT.log" 2> "${T}/ERR.log" &
+	./scripts/sompyle -v ${OPT_PARAMS[*]} "--workers=${WORKERS_PER_USER-1}" "${T}/score" "$OUTFILE" $W0MODE > "${T}/OUT.log" 2> "${T}/ERR.log" &
 	PID=$!
         printf "%s %d" "${U}" "$PID" > "${T}/worker.pid"
         while [ ! -f "$OUTFILE" ] || [ -s "$OUTFILE" ]; do

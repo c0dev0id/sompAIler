@@ -216,7 +216,7 @@ def get_quota(user, c=None):
         """, (user,)
     ), (None,))[0]
 
-def get_status(user, w0mode='ff', tail_log=False, quota=100, workers=None):
+def get_status(user, w0mode='ff', only_measures=None, tail_log=False, quota=100, workers=None):
     c = _get_cursor()
     resources = get_quota(user, c)
     sompyler_limits = SOMPYLER_LIMITS.replace(
@@ -228,6 +228,8 @@ def get_status(user, w0mode='ff', tail_log=False, quota=100, workers=None):
     my_env["SOMPYLER_LIMITS"] = sompyler_limits
     my_env["SKIP_KNOWN_LINES"] = str(1 if tail_log else '')
     my_env["SOMPYLER"] = SOMPYLER
+    if only_measures is not None:
+        my_env["ONLY_MEASURES"] = only_measures
     if workers is not None:
         my_env["WORKERS_PER_USER"] = str(workers)
 
