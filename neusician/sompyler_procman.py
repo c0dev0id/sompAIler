@@ -315,14 +315,14 @@ def get_status(user, w0mode='ff', tail_log=False, quota=100, workers=None):
 
 def call_external(*args, user=False):
     my_env = os.environ.copy()
-    my_env['SOMPYLER'] = SOMPYLER
+    modified_args = list(args)
     if user is not False:
         userdir = worker_directory_of_user(user)
         for i, arg in enumerate(args):
             if not '$USERDIR' in arg:
                 continue
-            args[i] = arg.replace('$USERDIR', userdir)
-    return subprocess.run(args,
+            modified_args[i] = arg.replace('$USERDIR', userdir)
+    return subprocess.run(modified_args,
         env={**os.environ, 'SOMPYLER': SOMPYLER},
         capture_output=True, check=True
     )
