@@ -10,7 +10,7 @@ LINE_LIMIT=100000
 STD_RESOURCES = 10**9
 SOMPYLER = None
 MIDIEXP = None
-SOMPYLER_LIMITS = None
+SOMPYLER_LIMITS = ''
 SUBDIR="neusician"
 EXT_PUBLISH_CMD=""
 TMPDIR=os.environ.get("TMPDIR", "/tmp")
@@ -313,8 +313,11 @@ def get_status(user, w0mode='ff', tail_log=False, quota=100, workers=None):
         'errors': errors,
     }
 
-def call_external(*args, user=False):
+def call_external(*args, user=False, add_to_env=None):
     my_env = os.environ.copy()
+    my_env['SOMPYLER'] = SOMPYLER
+    if add_to_env:
+        my_env.update(add_to_env)
     modified_args = list(args)
     if user is not False:
         userdir = worker_directory_of_user(user)
@@ -323,8 +326,7 @@ def call_external(*args, user=False):
                 continue
             modified_args[i] = arg.replace('$USERDIR', userdir)
     return subprocess.run(modified_args,
-        env={**os.environ, 'SOMPYLER': SOMPYLER},
-        capture_output=True, check=True
+        env=my_env, capture_output=True, check=True
     )
 
 def midi_export(file_name, ppqn, voices):
@@ -345,15 +347,14 @@ def midi_export(file_name, ppqn, voices):
 
 def analyze_tone(user, tone_number, what_to_return):
 
+    add_to_env = {}
     if what_to_return == "outline":
         c = _get_cursor()
         resources = get_quota(user, c)
-        sompyler_limits = SOMPYLER_LIMITS.replace(
+        add_to_env["SOMPYLER_LIMITS"] = SOMPYLER_LIMITS.replace(
                 "::",
                 f":{resources}:"
             )
-        my_env = os.environ.copy()
-        my_env["SOMPYLER_LIMITS"] = sompyler_limits
         flag = f"--outline"
     elif what_to_return == "sound":
         flag = f"--sound"
@@ -362,10 +363,8 @@ def analyze_tone(user, tone_number, what_to_return):
         raise RuntimeError(f"{what_to_return} not supported")
 
     try:
-        proc = subprocess.run(
-                ['analyze-tone',
-                    worker_directory_of_user(user), str(tone_number), flag
-                ], env=my_env, capture_output=True, check=True
+        proc = call_external(
+                'analyze-tone', '$USERDIR', str(tone_number), flag, add_to_env
             )
         stdout = proc.stdout
     except subprocess.CalledProcessError as e:
