@@ -426,7 +426,7 @@ def expand_line(s):
       """, _resolver, s, flags=re.X)
       
 
-def preprocess(infileobj=None):
+def preprocess(infileobj=None, out=None):
     global getter, markov_adv
 
     arbitext = []
@@ -440,6 +440,8 @@ def preprocess(infileobj=None):
 
     for line in infileobj:
     
+        if out: out.write(line)
+
         if line.startswith('*** '):
             endmarker = line[4:]
             if ':' in endmarker:
