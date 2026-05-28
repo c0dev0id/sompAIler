@@ -440,7 +440,7 @@ def preprocess(infileobj=None, out=None):
 
     for line in infileobj:
     
-        if out: out.write(line)
+        if out: print(line, file=out)
 
         if line.startswith('*** '):
             endmarker = line[4:]

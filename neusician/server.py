@@ -344,7 +344,10 @@ def create_app(test_config=None):
                     if "\n*** " in request.form["yamlcode"][:m.start()]:
                         yamlcode = ag_preprocess(yamlcode, out=open(score_pre_file, 'w'))
                     elif os.path.exists(score_pre_file.removesuffix("pre") + "txt"):
-                        os.path.unlink(score_pre_file)
+                        try:
+                            os.unlink(score_pre_file)
+                        except FileNotFoundError:
+                            pass
                 else:
                     return "yamlcode does not contain any measures", 400
                 procman.initialize_sompyler(user, yamlcode)
@@ -362,7 +365,9 @@ def create_app(test_config=None):
             if status['frozen'] is True:
                 if (score_file := procman.worker_directory_of_user(user, "score.pre")):
                     if os.path.exists(score_file):
-                        os.path.rename( score_file.removesuffix("pre") + "txt")
+                        os.rename(
+                                score_file, score_file.removesuffix("pre") + "txt"
+                            )
                 if "file_accomplished" in status:
                     return redirect(url_for("send_audio_generated"), code=303)
                 elif request.form.get("w0mode") == "midi":
