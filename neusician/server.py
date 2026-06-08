@@ -48,7 +48,7 @@ def create_app(test_config=None):
 
     @app.template_filter('fsup')
     def sup_fractional(number):
-        if isinstance(number, float):
+        if isinstance(number, (int, float)):
             number = str(round(number, 3))
         return number.replace(".", "<sup>.") + "</sup>"
  
