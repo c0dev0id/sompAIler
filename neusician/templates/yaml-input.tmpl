@@ -19,8 +19,12 @@
  <option value="reverb">free-style "room" definition s. score section #1</option>
  </optgroup>
 </select>
-<label for="measures"><nobr>Render only measure numbers <input name="only-measures" id="measures" placeholder="if not all"></nobr>
-{% if quota != '' %}<nobr><label for="cap-quota">Use up to </label><input name="quota" id="cap-quota" type="number" style="width: 3em" value="{{ quota }}" max="{{ quota }}">% of quota</nobr>{% endif %}
+<p>Ways to limit quota use:</p>
+<ul>
+<li><nobr><label for="measures">Render only measure numbers</label> <input name="only-measures" id="measures" placeholder="if not all"></nobr></li>
+<li><nobr><label for="refresh-embedded-instruments"> Refresh embedded instruments, ignore NOT_CHANGED_SINCE if set</label> <input name="refresh-embedded-instruments" id="refresh-embedded-instruments" type="checkbox" value="yes"></nobr></li>
+{% if quota != '' %}<li><nobr><label for="cap-quota">Use up to </label><input name="quota" id="cap-quota" type="number" style="width: 3em" value="{{ quota }}" max="{{ quota }}">% of quota</nobr></li>{% endif %}
+<ul>
 <button name="action" value="sompyle">Sompyle</button>
 <button name="action" title="(under construction)" value="rawanalysis">introspection and limited changes</button><button type="reset">Undo changes</button>
 {% if user %}

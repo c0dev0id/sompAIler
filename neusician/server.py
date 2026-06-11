@@ -361,7 +361,9 @@ def create_app(test_config=None):
                     user, request.form.get("w0mode", "ff"),
                     request.form.get("only-measures"),
                     quota=int(request.form.get("quota", 100)),
-                    workers=app.config.get("WORKERS_PER_USER")
+                    workers=app.config.get("WORKERS_PER_USER"),
+                    refresh_embedded_instruments=
+                        request.form.get("refresh-embedded-instruments")
                 )
 
             if status['frozen'] is True:
