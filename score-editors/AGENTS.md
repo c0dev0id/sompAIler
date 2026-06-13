@@ -24,9 +24,9 @@ Conditions the author of Neusician relies upon to be fullfilled
     cover deterministic pseudo-random generation as there are already examples
     upstream.
 
- 3. optional: If private/internal, the author of Neusician is provided reporter
-    role to the repository of the blueprint repository. He will deny ownership
-    or maintainer role.
+ 3. If the repository is private/internal, the author of Neusician can be invited
+    for reporter role to the repository of the blueprint for evaluation and
+    prompting assistance. He would refuse owner or maintainer role.
 
  4. R. contains only the blueprint code, not the Neusician or the Sompyler core.
     root file is expected `__init__.py` containing a flask.Blueprint() call,
