@@ -60,6 +60,17 @@ def create_app(test_config=None):
         # load the test config if passed in
         app.config.from_mapping(test_config)
 
+    if (seb := 'SCORE_EDITOR_BLUEPRINT') in app.config:
+        import importlib
+        app.register_blueprint(
+          importlib.import_module(
+            "score-editors" + "." + (
+                app.config[seb].replace("../","").removesuffix(".py")
+            )
+          ),
+          url_prefix="/sompyle/score-editor"
+        )
+            
     print("NEUSICIAN_NEW_USER_REG_PREFIX="
         + app.config['NEUSICIAN_NEW_USER_REG_PREFIX'],
         file=sys.stderr)
