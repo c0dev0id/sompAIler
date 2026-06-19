@@ -23,9 +23,10 @@ Conditions the author of Neusician relies upon to be fullfilled
     for reporter role to the repository of the blueprint for evaluation and
     prompting assistance. He would refuse owner or maintainer role.
 
- 4. R. contains only the blueprint code, not the Neusician or the Sompyler core.
-    root file is expected `__init__.py` containing a flask.Blueprint() call,
-    to be properly imported.
+ 4. R. contains only the blueprint code, not the Neusician or the Sompyler
+    core.  root file is expected `__init__.py` containing a flask.Blueprint()
+    call, assigned to a variable `blueprint` that Neusician references on
+    registration.
 
  5. Blueprint accepts at its root endpoint url the GET parameter `?import=1`
 

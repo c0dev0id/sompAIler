@@ -64,9 +64,9 @@ def create_app(test_config=None):
         import importlib
         app.register_blueprint(
           importlib.import_module(
-            "score-editors" + "." + (
+            "score_editors" + "." + (
                 app.config[seb].replace("../","").removesuffix(".py")
-            )
+            ).blueprint
           ),
           url_prefix="/sompyle/score-editor"
         )
