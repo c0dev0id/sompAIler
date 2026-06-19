@@ -1,0 +1,6 @@
+[submodule "PLAN/sompyler"]
+	path = PLAN/sompyler
+	url = https://gitlab.com/flowdy/sompyler
+[submodule "PLAN/vue3js-app-proposal-for-sdk-claude"]
+	path = PLAN/vue3js-app-proposal-for-sdk-claude
+	url = https://git.uugrn.org/flow/vue3js-app-proposal-for-sdk-claude
