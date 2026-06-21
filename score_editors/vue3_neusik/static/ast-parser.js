@@ -178,7 +178,6 @@ function buildInstrument(node) {
         isDirty: false,
         variations: [],
         basicProperties: null,
-        railsbackCurve: null,
         volumes: null,
         timbre: null,
         fmModulations: [],
@@ -192,9 +191,6 @@ function buildInstrument(node) {
                 break;
             case 'character.basic_properties':
                 instr.basicProperties = buildBasicProperties(child);
-                break;
-            case 'RAILSBACK_CURVE.shape':
-                instr.railsbackCurve = buildShape(child);
                 break;
             case 'VOLUMES.shape':
                 instr.volumes = buildShape(child);
@@ -221,6 +217,7 @@ function buildVariation(node) {
         labelSpecs: [],
         subvariations: [],
         spread: null,
+        railsbackCurve: null,
         rawChildren: [],
     };
 
@@ -238,6 +235,9 @@ function buildVariation(node) {
                 break;
             case 'variation.SPREAD':
                 v.spread = child.positionals;
+                break;
+            case 'RAILSBACK_CURVE.shape':
+                v.railsbackCurve = buildShape(child);
                 break;
             default:
                 v.rawChildren.push(buildGeneric(child));

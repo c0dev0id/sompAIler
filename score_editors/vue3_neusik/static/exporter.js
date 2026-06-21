@@ -69,14 +69,14 @@ function variationLines(v) {
     lines.push(...basicPropLines(v.basicProperties));
     for (const ls of (v.labelSpecs ?? [])) lines.push(...labelSpecLines(ls));
     if (v.spread?.length) lines.push(`SPREAD: [${v.spread.join(', ')}]`);
+    if (v.railsbackCurve) { const rc = serializeShape(v.railsbackCurve); if (rc) lines.push(`RAILSBACK_CURVE: "${rc}"`); }
     for (const sv of (v.subvariations ?? [])) lines.push(...variationLines(sv));
     return lines;
 }
 
 // ── Instrument character block ─────────────────────────────────────────────
-// Collects VOLUMES / TIMBRE / RAILSBACK_CURVE / FM from instrument level
-// (RFC §3.2.1.3: these are variation-level properties, so they belong inside
-// character, attached to the first/only variation).
+// VOLUMES / TIMBRE / FM appear at depth 01 (direct instrument children per RFC §3.2.1.3).
+// RAILSBACK_CURVE is depth 02 (inside variation) and is emitted by variationLines().
 
 function instrCharacterLines(instr) {
     const extraLines = [];
@@ -84,10 +84,6 @@ function instrCharacterLines(instr) {
     if (vol) extraLines.push(`VOLUMES: "${vol}"`);
     const timbre = serializeShape(instr.timbre);
     if (timbre) extraLines.push(`TIMBRE: "${timbre}"`);
-    if (instr.railsbackCurve) {
-        const rc = serializeShape(instr.railsbackCurve);
-        if (rc) extraLines.push(`RAILSBACK_CURVE: "${rc}"`);
-    }
     for (const fm of (instr.fmModulations ?? [])) extraLines.push(`FM: "${serializeFm(fm)}"`);
 
     const variations = instr.variations ?? [];
