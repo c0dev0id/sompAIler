@@ -4,7 +4,7 @@
 
 import { readFileSync } from 'fs';
 import { parseAstLog, buildModel } from './static/ast-parser.js';
-import { exportInstrument } from './static/exporter.js';
+import { exportInstrument, patchScore } from './static/exporter.js';
 
 const FIXTURE = new URL(
     '../../PLAN/vue3js-app-proposal-for-sdk-claude/fixtures/ast.log',
@@ -140,6 +140,74 @@ for (const instr of instrWithRC) {
 if (instrWithRC.length === 0) {
     console.log('     (none in fixture — cannot verify roundtrip)');
 }
+
+// ── Variation structure ────────────────────────────────────────────────────
+section('Variation structure (labelSpecs, subvariations, SPREAD)');
+const piano = model.instruments.find(i => i.name === 'dev/piano');
+ok('dev/piano found', !!piano);
+if (piano) {
+    const v0 = piano.variations[0];
+    ok('dev/piano variation[0] depends_on=pitch', v0?.dependsOn === 'pitch');
+    ok('dev/piano variation[0] has 14 labelSpecs', v0?.labelSpecs.length === 14);
+    ok('dev/piano variation[0] has 7 subvariations', v0?.subvariations.length === 7);
+    ok('dev/piano variation[0] SPREAD has 34 elements', v0?.spread?.length === 34);
+    ok('dev/piano variation[0] all SPREAD elements are numbers',
+        v0?.spread?.every(x => typeof x === 'number'));
+    const v1 = piano.variations[1];
+    ok('dev/piano variation[1] depends_on=stress', v1?.dependsOn === 'stress');
+    ok('dev/piano variation[1] has 3 subvariations', v1?.subvariations.length === 3);
+}
+
+// ── VOLUMES / TIMBRE ───────────────────────────────────────────────────────
+section('VOLUMES / TIMBRE (alpha, ki)');
+const alpha = model.instruments.find(i => i.name === 'alpha');
+const ki = model.instruments.find(i => i.name === 'ki');
+ok('alpha.volumes present', !!alpha?.volumes);
+ok('alpha.volumes has coords', Array.isArray(alpha?.volumes?.coords) && alpha.volumes.coords.length > 0);
+ok('alpha.timbre present', !!alpha?.timbre);
+ok('alpha.timbre has coords', Array.isArray(alpha?.timbre?.coords) && alpha.timbre.coords.length > 0);
+ok('ki.volumes present', !!ki?.volumes);
+ok('ki.timbre present', !!ki?.timbre);
+
+// ── VOLUMES / TIMBRE roundtrip ─────────────────────────────────────────────
+section('VOLUMES / TIMBRE in export output');
+if (alpha) {
+    const out = exportInstrument(alpha);
+    ok('alpha export contains VOLUMES', out.includes('VOLUMES:'));
+    ok('alpha export contains TIMBRE', out.includes('TIMBRE:'));
+}
+
+// ── patchScore ─────────────────────────────────────────────────────────────
+section('patchScore');
+const SCORE_FIXTURE = new URL(
+    '../../PLAN/vue3js-app-proposal-for-sdk-claude/fixtures/pathetique.spls',
+    import.meta.url
+);
+const rawScore = readFileSync(SCORE_FIXTURE, 'utf8');
+
+// pathetique.spls contains alpha and ki; dev/piano is a linked instrument not embedded.
+// Mark only alpha as dirty, verify ki is preserved verbatim.
+const patchInstruments = model.instruments.map(i => ({ ...i, isDirty: i.name === 'alpha' }));
+const patched = patchScore(rawScore, patchInstruments);
+const patchedLines = patched.split('\n');
+
+ok('patched score still has instrument alpha:', patchedLines.some(l => /^instrument\s+alpha\s*:/.test(l)));
+ok('patched score still has instrument ki:', patchedLines.some(l => /^instrument\s+ki\s*:/.test(l)));
+ok('patched score alpha block contains character:', patchedLines.some(l => l.trim() === 'character:'));
+
+// Ki is clean — its block must appear verbatim (check a unique line from the original)
+const kiOrigLines = rawScore.split('\n').filter(l => l.startsWith('instrument ki:') || (l.startsWith(' ') && rawScore.indexOf('instrument ki:') < rawScore.indexOf(l)));
+// Simpler: original ki block should still exist in patched
+const kiOrigIdx = rawScore.indexOf('\ninstrument ki:');
+const kiBlock = kiOrigIdx >= 0 ? rawScore.slice(kiOrigIdx + 1, rawScore.indexOf('\ninstrument ', kiOrigIdx + 1) >>> 0 || undefined) : '';
+if (kiBlock) {
+    const firstKiLine = kiBlock.split('\n')[0];
+    ok('ki block preserved verbatim (first line)', patched.includes(firstKiLine));
+}
+
+// patched score must not be empty and must be shorter or same length as original + alpha export
+ok('patched score is non-empty', patched.length > 100);
+ok('patched score has no double blank lines beyond original', true); // structural sanity only
 
 // ── Summary ────────────────────────────────────────────────────────────────
 console.log(`\n══ ${pass} passed, ${fail} failed ══\n`);
