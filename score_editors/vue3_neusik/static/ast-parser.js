@@ -267,7 +267,10 @@ function buildBasicProperties(node) {
         } else if (child.parentSlot === 'variation' && child.slot === 'O') {
             bp.oscillator = child.props.ref ?? child.positionals[0];
         } else if (child.parentSlot === 'FM' && child.slot === 'modulation') {
-            bp.fmModulations.push({ ...child.props });
+            const fm = { ...child.props };
+            const envChild = child.children.find(c => c.slot === 'shape');
+            if (envChild) fm.shape = buildShape(envChild);
+            bp.fmModulations.push(fm);
         } else {
             bp.rawChildren.push(buildGeneric(child));
         }
@@ -300,7 +303,6 @@ function buildShape(node) {
         type: 'shape',
         length: node.props.length,
         start: node.props.start,
-        z: node.props.z ?? 1,
         coords: node.children
             .filter(c => c.slot === 'coords')
             .map(c => ({
@@ -314,14 +316,15 @@ function buildShape(node) {
 
 function buildBar(node) {
     const id = node.positionals[0] ?? '';
-    const idMatch = id.match(/^(\w?)(\d+)P(\d+)L(\d+)M(\d+)$/);
+    // Format: [movement]barIndex[=absoluteIndex]P<part>L<line>[P\d*]M<measure>
+    const idMatch = id.match(/^(\w?)(\d+)(?:=\d+)?P(\d+)L(\d+)P?\d*M(\d+)$/);
     const bar = {
         type: 'bar',
         id,
         movement: idMatch ? idMatch[1] : '',
-        part: idMatch ? parseInt(idMatch[2]) : 0,
-        line: idMatch ? parseInt(idMatch[3]) : 0,
-        measure: idMatch ? parseInt(idMatch[4]) : 0,
+        part: idMatch ? parseInt(idMatch[3]) : 0,
+        line: idMatch ? parseInt(idMatch[4]) : 0,
+        measure: idMatch ? parseInt(idMatch[5]) : 0,
         stressor: null,
         tempoShape: null,
         tempoLevels: null,
