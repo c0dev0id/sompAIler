@@ -1,138 +1,157 @@
-// Template-based YAML serializer — instrument blocks only (v1).
-// Each object selects a template by finding the first entry in its
-// selectExportTemplate() list where all required slots have values.
-// Placeholders #0, #1, ... are filled with slot values.
-
-function fillTemplate(template, slots) {
-    return template.replace(/#(\d+)/g, (_, i) => slots[parseInt(i, 10)] ?? '');
-}
-
-function indent(text, level) {
-    const pad = '  '.repeat(level);
-    return text.split('\n').map((line, i) => {
-        if (i === 0) return line;
-        if (line.startsWith('- ')) return pad.slice(2) + line;
-        return pad + line;
-    }).join('\n');
-}
+// RFC-compliant YAML serializer for Sompyler instrument blocks.
+// Operates on the model produced by ast-parser.js buildModel().
 
 // ── Shape ──────────────────────────────────────────────────────────────────
+// RFC §1.3.4.5: SHAPE = [PREFIX (":" / ";")] Node 1*(";" Node)
+//               Node  = x "," y ["*" z] ["!"]
+// PREFIX+colon is the duration/resolution; optional START+semicolon follows.
 
-function exportCoord(coord) {
-    let s = `x=${coord.x} y=${coord.y}`;
-    if (coord.z !== undefined && coord.z !== 1) s += ` z=${coord.z}`;
-    if (coord.isSharp) s += ` is_sharp=True`;
+function serializeShape(shape) {
+    if (!shape) return null;
+    const nodes = shape.coords.map(c => {
+        let s = `${c.x},${c.y}`;
+        if (c.z !== undefined && c.z !== 1) s += `*${c.z}`;
+        if (c.isSharp) s += '!';
+        return s;
+    }).join(';');
+    let prefix = '';
+    if (shape.length != null) prefix = `${shape.length}:`;
+    if (shape.start != null) prefix += `${shape.start};`;
+    return prefix + nodes;
+}
+
+// ── FM / AM modulation ─────────────────────────────────────────────────────
+// RFC §3.2.1.1.6-7: FM = FREQUENCY ["f"/"F"] ["@" OSC] ["[" SHAPE "]"] ";" MOD ":" BASE
+
+function serializeFm(fm) {
+    let s = String(fm.frequency ?? '');
+    if (fm.factor) s += fm.factor;
+    if (fm.osc) s += `@${fm.osc}`;
+    s += `;${fm.mod ?? ''}:${fm.base ?? ''}`;
     return s;
 }
 
-function exportShape(shape, slotName, level) {
-    if (!shape) return '';
-    const coordLines = shape.coords.map(c => `  - coords: ${exportCoord(c)}`).join('\n');
-    let header = `${slotName}: length=${shape.length}`;
-    if (shape.start !== undefined) header += ` start=${shape.start}`;
-    if (shape.z !== undefined && shape.z !== 1) header += ` z=${shape.z}`;
-    const block = coordLines ? `${header}\n${coordLines}` : header;
-    return indent(block, level);
-}
+// ── Basic properties ───────────────────────────────────────────────────────
+// RFC §3.2.1.1: O, A, S, R, FM go directly in the variation MAPPING.
+// Returns array of YAML lines at 0 indent.
 
-// ── BasicProperties ────────────────────────────────────────────────────────
-
-function exportBasicProperties(bp, level) {
-    if (!bp) return '';
+function basicPropLines(bp) {
+    if (!bp) return [];
     const lines = [];
-    if (bp.oscillator) lines.push(`  O: ref=${bp.oscillator}`);
-    if (bp.A) lines.push(`  ${exportShape(bp.A, 'A', 1)}`);
-    if (bp.S) lines.push(`  ${exportShape(bp.S, 'S', 1)}`);
-    if (bp.R) lines.push(`  ${exportShape(bp.R, 'R', 1)}`);
-    for (const fm of (bp.fmModulations ?? [])) {
-        const parts = Object.entries(fm).map(([k, v]) => `${k}=${v}`).join(' ');
-        lines.push(`  FM:\n    modulation: ${parts}`);
-    }
-    if (!lines.length) return '';
-    return indent('basic_properties:\n' + lines.join('\n'), level);
+    if (bp.oscillator) lines.push(`O: ${bp.oscillator}`);
+    const a = serializeShape(bp.A);
+    if (a) lines.push(`A: "${a}"`);
+    const s = serializeShape(bp.S);
+    if (s) lines.push(`S: "${s}"`);
+    const r = serializeShape(bp.R);
+    if (r) lines.push(`R: "${r}"`);
+    for (const fm of (bp.fmModulations ?? [])) lines.push(`FM: "${serializeFm(fm)}"`);
+    return lines;
 }
 
-// ── LabelSpec ─────────────────────────────────────────────────────────────
+// ── Labelled property groups ───────────────────────────────────────────────
+// RFC §3.2.1.2: label name (3+ lowercase chars) is the MAPPING KEY directly.
+// Returns array of YAML lines at 0 indent.
 
-function exportLabelSpec(ls, level) {
-    const label = ls.label ? ` '${ls.label}'` : '';
-    const bp = exportBasicProperties(ls.basicProperties, 1);
-    const body = bp ? `label_spec:${label}\n  ${bp}` : `label_spec:${label}`;
-    return indent(body, level);
+function labelSpecLines(ls) {
+    const inner = basicPropLines(ls.basicProperties);
+    if (!inner.length) return [`${ls.label}:`];
+    return [`${ls.label}:`, ...inner.map(l => `  ${l}`)];
 }
 
 // ── Variation ─────────────────────────────────────────────────────────────
+// Returns YAML lines for one variation MAPPING (no leading "- ").
 
-function exportVariation(v, level) {
-    const dep = v.dependsOn ? ` depends_on=${v.dependsOn}` : '';
-    const lines = [`variation:${dep}`];
-    if (v.basicProperties) lines.push(`  ${exportBasicProperties(v.basicProperties, 1)}`);
-    for (const ls of (v.labelSpecs ?? [])) lines.push(`  ${exportLabelSpec(ls, 1)}`);
-    for (const sv of (v.subvariations ?? [])) lines.push(`  ${exportVariation(sv, 1)}`);
-    if (v.spread?.length) lines.push(`  SPREAD: ${v.spread.join(' ')}`);
-    return indent(lines.join('\n'), level);
+function variationLines(v) {
+    const lines = [];
+    if (v.dependsOn) lines.push(`ATTR: ${v.dependsOn}`);
+    lines.push(...basicPropLines(v.basicProperties));
+    for (const ls of (v.labelSpecs ?? [])) lines.push(...labelSpecLines(ls));
+    if (v.spread?.length) lines.push(`SPREAD: [${v.spread.join(', ')}]`);
+    for (const sv of (v.subvariations ?? [])) lines.push(...variationLines(sv));
+    return lines;
+}
+
+// ── Instrument character block ─────────────────────────────────────────────
+// Collects VOLUMES / TIMBRE / RAILSBACK_CURVE / FM from instrument level
+// (RFC §3.2.1.3: these are variation-level properties, so they belong inside
+// character, attached to the first/only variation).
+
+function instrCharacterLines(instr) {
+    const extraLines = [];
+    const vol = serializeShape(instr.volumes);
+    if (vol) extraLines.push(`VOLUMES: "${vol}"`);
+    const timbre = serializeShape(instr.timbre);
+    if (timbre) extraLines.push(`TIMBRE: "${timbre}"`);
+    if (instr.railsbackCurve) {
+        const rc = serializeShape(instr.railsbackCurve);
+        if (rc) extraLines.push(`RAILSBACK_CURVE: "${rc}"`);
+    }
+    for (const fm of (instr.fmModulations ?? [])) extraLines.push(`FM: "${serializeFm(fm)}"`);
+
+    const variations = instr.variations ?? [];
+    const syntheticRoot = instr.basicProperties
+        ? { basicProperties: instr.basicProperties, labelSpecs: [], subvariations: [], spread: null, dependsOn: null }
+        : null;
+
+    const allVariations = [
+        ...(syntheticRoot ? [syntheticRoot] : []),
+        ...variations,
+    ];
+
+    if (allVariations.length <= 1) {
+        // Single variation — emit as MAPPING directly under character:
+        const vLines = allVariations.length
+            ? [...variationLines(allVariations[0]), ...extraLines]
+            : extraLines;
+        return vLines.map(l => `    ${l}`);
+    }
+
+    // Multiple variations — RFC MAYBE_LIST<VARIATION> as YAML sequence.
+    const result = [];
+    for (let i = 0; i < allVariations.length; i++) {
+        const vLines = variationLines(allVariations[i]);
+        const allLines = i === 0 ? [...vLines, ...extraLines] : vLines;
+        if (!allLines.length) continue;
+        result.push(`    - ${allLines[0]}`);
+        for (const l of allLines.slice(1)) result.push(`      ${l}`);
+    }
+    return result;
 }
 
 // ── Instrument ────────────────────────────────────────────────────────────
+// RFC §4.4: embedded instrument key is "instrument NAME:" not "instrument: 'NAME'"
 
 export function exportInstrument(instr) {
-    const lines = [];
-    const name = instr.name;
-    lines.push(`instrument: '${name}'`);
-
-    for (const v of (instr.variations ?? [])) {
-        lines.push(`  character:\n    ${exportVariation(v, 2)}`);
-    }
-
-    if (instr.basicProperties) {
-        lines.push(`  character:\n    ${exportBasicProperties(instr.basicProperties, 2)}`);
-    }
-
-    if (instr.railsbackCurve) {
-        lines.push(`  ${exportShape(instr.railsbackCurve, 'RAILSBACK_CURVE', 1)}`);
-    }
-    if (instr.volumes) {
-        lines.push(`  ${exportShape(instr.volumes, 'VOLUMES', 1)}`);
-    }
-    if (instr.timbre) {
-        lines.push(`  ${exportShape(instr.timbre, 'TIMBRE', 1)}`);
-    }
-    for (const fm of (instr.fmModulations ?? [])) {
-        const parts = Object.entries(fm).map(([k, v]) => `${k}=${v}`).join(' ');
-        lines.push(`  FM:\n    modulation: ${parts}`);
-    }
-
+    const lines = [`instrument ${instr.name}:`];
+    if (instr.notChangedSince) lines.push(`  NOT_CHANGED_SINCE: ${instr.notChangedSince}`);
+    lines.push(`  character:`);
+    lines.push(...instrCharacterLines(instr));
     return lines.join('\n');
 }
 
 // ── Score patch ────────────────────────────────────────────────────────────
+// Replace dirty instrument blocks in rawScoreText with RFC-serialized output.
+// Non-dirty instruments are left verbatim.
 
-// Replace instrument blocks in rawScoreText with serialized model instruments.
-// Non-dirty linked instruments (NOT_CHANGED_SINCE set, not edited) are left as-is
-// from rawScoreText. Embedded and dirty instruments are emitted from the model.
 export function patchScore(rawScoreText, instruments) {
-    // Split raw text into instrument blocks and other sections.
-    // Strategy: locate each `^instrument:` line and replace that block
-    // (up to next same-indent section or EOF) with the serialized model.
-
     const lines = rawScoreText.split('\n');
     const result = [];
     const instrMap = {};
     for (const instr of instruments) {
-        const basename = instr.name.includes('/') ? instr.name.split('/').pop() : instr.name;
-        instrMap[basename] = instr;
         instrMap[instr.name] = instr;
+        if (instr.name.includes('/')) instrMap[instr.name.split('/').pop()] = instr;
     }
 
     let i = 0;
     while (i < lines.length) {
         const line = lines[i];
-        const m = line.match(/^instrument:\s+'?([^']+)'?/);
+        // RFC §4.4: "instrument NAME:" — strip optional quotes around name
+        const m = line.match(/^instrument\s+(.+?)\s*:/);
         if (m) {
-            const rawName = m[1];
+            const rawName = m[1].replace(/^'|'$/g, '');
             const instr = instrMap[rawName];
             if (instr && instr.isDirty) {
-                // consume the raw block
                 i++;
                 while (i < lines.length && (lines[i].startsWith(' ') || lines[i] === '')) i++;
                 result.push(exportInstrument(instr));
