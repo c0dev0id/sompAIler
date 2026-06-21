@@ -3,3 +3,4 @@ __pycache__/
 *.py[co]
 score-editors/
 instance/
+sample_analysis/data/
