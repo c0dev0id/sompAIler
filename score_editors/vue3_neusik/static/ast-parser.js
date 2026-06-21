@@ -287,12 +287,22 @@ function buildLabelSpec(node) {
         rawChildren: [],
     };
 
+    const directBpChildren = [];
     for (const child of node.children) {
         if (child.parentSlot === 'variation' && child.slot === 'basic_properties') {
             ls.basicProperties = buildBasicProperties(child);
+        } else if (
+            (child.slot === 'shape' && (child.parentSlot === 'A' || child.parentSlot === 'S' || child.parentSlot === 'R')) ||
+            (child.parentSlot === 'variation' && child.slot === 'O') ||
+            (child.parentSlot === 'FM' && child.slot === 'modulation')
+        ) {
+            directBpChildren.push(child);
         } else {
             ls.rawChildren.push(buildGeneric(child));
         }
+    }
+    if (!ls.basicProperties && directBpChildren.length > 0) {
+        ls.basicProperties = buildBasicProperties({ children: directBpChildren });
     }
 
     return ls;

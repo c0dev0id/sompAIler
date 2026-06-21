@@ -141,6 +141,18 @@ if (instrWithRC.length === 0) {
     console.log('     (none in fixture — cannot verify roundtrip)');
 }
 
+// ── LabelSpec A/S/R shapes ────────────────────────────────────────────────
+section('LabelSpec direct A/S/R shapes');
+const pianoV0 = model.instruments.find(i => i.name === 'dev/piano')?.variations[0];
+const ls01 = pianoV0?.labelSpecs.find(l => l.label === 'edb65p01');
+ok('edb65p01 labelSpec found', !!ls01);
+ok('edb65p01 has basicProperties', !!ls01?.basicProperties);
+ok('edb65p01 A shape present', !!ls01?.basicProperties?.A);
+ok('edb65p01 S shape present', !!ls01?.basicProperties?.S);
+ok('edb65p01 S shape has coords', ls01?.basicProperties?.S?.coords?.length > 0);
+const sShape = ls01?.basicProperties?.S;
+ok('edb65p01 S shape length is number', typeof sShape?.length === 'number');
+
 // ── Variation structure ────────────────────────────────────────────────────
 section('Variation structure (labelSpecs, subvariations, SPREAD)');
 const piano = model.instruments.find(i => i.name === 'dev/piano');
