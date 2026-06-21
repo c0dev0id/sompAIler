@@ -27,6 +27,7 @@ function serializeFm(fm) {
     let s = String(fm.frequency ?? '');
     if (fm.factor) s += fm.factor;
     if (fm.osc) s += `@${fm.osc}`;
+    if (fm.shape) s += `[${serializeShape(fm.shape)}]`;
     s += `;${fm.mod ?? ''}:${fm.base ?? ''}`;
     return s;
 }
