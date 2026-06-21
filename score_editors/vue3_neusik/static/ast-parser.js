@@ -315,16 +315,9 @@ function buildShape(node) {
 }
 
 function buildBar(node) {
-    const id = node.positionals[0] ?? '';
-    // Format: [movement]barIndex[=absoluteIndex]P<part>L<line>[P\d*]M<measure>
-    const idMatch = id.match(/^(\w?)(\d+)(?:=\d+)?P(\d+)L(\d+)P?\d*M(\d+)$/);
     const bar = {
         type: 'bar',
-        id,
-        movement: idMatch ? idMatch[1] : '',
-        part: idMatch ? parseInt(idMatch[3]) : 0,
-        line: idMatch ? parseInt(idMatch[4]) : 0,
-        measure: idMatch ? parseInt(idMatch[5]) : 0,
+        id: node.positionals[0] ?? '',
         stressor: null,
         tempoShape: null,
         tempoLevels: null,
