@@ -1,6 +1,5 @@
 import { h } from 'vue';
 import { ObjectShort } from './ObjectShort.js';
-import { ObjectBasic } from './ObjectBasic.js';
 
 // Shows sub-objects of the currently focused node — variations, bars, voices, etc.
 export const PaneSubObjects = {
@@ -8,7 +7,7 @@ export const PaneSubObjects = {
     setup(props) {
         function focused() {
             const fp = props.store.focusPath;
-            return fp.length ? fp[fp.length - 1] : null;
+            return fp.length ? fp[fp.length - 1] : props.store.scoreModel;
         }
 
         function subItems(node) {
