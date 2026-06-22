@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Critical Rules
+- **Always** read the RFC (sompyler/doc/rfc.md) before making changes. RFC conformance is of utmost importance.
+- **Always** treat the somplyler and neusician directories as read-only.
+- **Never** check in any CLAUDE file (.claude/, CLAUDE.md, CHANGELOG.md, .github/development-journal.md) to submodule repositories. They can be checked in to the root repository.
+- **Always** perform fixture tests to find errors after in the implementation.
+- **Always** verify that changes don't break RFC conformance
+
 ## General
 
 Data in the `PLAN/` directory is for reference only and must not be changed.

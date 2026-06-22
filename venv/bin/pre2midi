@@ -1,5 +1,0 @@
-#!/bin/bash
-set -eu
-cd $MIDIEXP
-. venv/bin/activate
-python scripts/pre2midi.py "$4" $2 $3 < "$1"
