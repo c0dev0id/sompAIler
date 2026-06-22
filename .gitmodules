@@ -4,3 +4,6 @@
 [submodule "neusican"]
 	path = neusican
 	url = git@gitlab.com:c0dev0id/neusican.git
+[submodule "AddOns/score_editors/vue3js-app"]
+	path = AddOns/score_editors/vue3js-app
+	url = _gitea@git.uugrn.org:sdk/vue3js-app.git
