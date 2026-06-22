@@ -1,9 +1,9 @@
 [submodule "sompyler"]
 	path = sompyler
 	url = git@gitlab.com:c0dev0id/sompyler.git
-[submodule "neusican"]
-	path = neusican
-	url = git@gitlab.com:c0dev0id/neusican.git
+[submodule "neusician"]
+	path = neusician
+	url = git@gitlab.com:c0dev0id/neusician.git
 [submodule "AddOns/score_editors/vue3js-app"]
 	path = AddOns/score_editors/vue3js-app
 	url = _gitea@git.uugrn.org:sdk/vue3js-app.git
