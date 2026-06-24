@@ -25,8 +25,17 @@ All worker assignment logic lives in SQL views and triggers (`neusician/schema.s
 ### Fork workflow
 This repo is a fork of [upstream neusician](https://gitlab.com/flowdy/neusician) (remote: `upstream`). Development happens here; the upstream author cherry-picks commits back. Fetch `upstream` periodically and merge/rebase to stay in sync. `PLAN/` submodules are read-only references — never commit changes to them.
 
-### Blueprint registration bug (server.py:66–72)
-The upstream added `.blueprint` to the import chain but placed it incorrectly — it's called on the config string (after `.removesuffix()`) rather than on the `import_module()` return value. This causes `AttributeError: 'str' object has no attribute 'blueprint'` at startup when `SCORE_EDITOR_BLUEPRINT` is configured. A fix was made in `d4bbe64` but reverted by the user in `a253678` — needs resolution before the score editor can be used.
+### Blueprint registration (server.py:66–72) — resolved
+Two bugs were fixed: `"score-editors"` → `"score_editors"` (hyphens not valid as Python identifiers in importable paths), and `.blueprint` moved outside `import_module(...)` so it is called on the module object, not the string. `SCORE_EDITOR_BLUEPRINT` config value must match `[A-Za-z]\w+`.
+
+### Bar export via YAML document stream
+Sompyler score files are YAML document streams: bars are separated by `\n---\n`, each a standalone YAML document with `_id:` and `_meta:` keys followed by voice note lines. The exporter splits on `\n---\n`, patches only dirty bar documents by regenerating the `_meta:` block in-place, and preserves voice note content verbatim. This avoids any need to re-serialize the note notation format.
+
+### Undo chain for linked instrument discard
+Mutations to shape coords happen in-place before `onChange` fires. To support discarding the first edit to a linked instrument, each mutating component (`ShapeEditor`, `EnvelopeEditor`) passes `{ undo }` to `onChange`. The undo callback is stored in `pendingEdit` and called if the user chooses discard in the modal.
+
+### AM modulation reuses FM serializer
+AM and FM modulation share identical syntax per RFC §3.2.1.1.6-7. A single `serializeModulation()` function handles both. The parser captures both under `fmModulations` / `amModulations` arrays at both the instrument level and inside `basic_properties`.
 
 ## Core Features
 
