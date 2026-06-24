@@ -1,6 +1,6 @@
 [submodule "sompyler"]
 	path = sompyler
-	url = git@gitlab.com:c0dev0id/sompyler.git
+	url = https://gitlab.com/flowdy/sompyler
 [submodule "neusician"]
 	path = neusician
 	url = https://gitlab.com/flowdy/neusician
