@@ -3,7 +3,7 @@
 	url = git@gitlab.com:c0dev0id/sompyler.git
 [submodule "neusician"]
 	path = neusician
-	url = git@gitlab.com:c0dev0id/neusician.git
+	url = https://gitlab.com/flowdy/neusician
 [submodule "AddOns/score_editors/vue3js-app"]
 	path = AddOns/score_editors/vue3js-app
 	url = _gitea@git.uugrn.org:sdk/vue3js-app.git
