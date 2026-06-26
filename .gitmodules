@@ -6,4 +6,4 @@
 	url = https://gitlab.com/flowdy/neusician.git
 [submodule "AddOns/score_editors/vue3js-app"]
 	path = AddOns/score_editors/vue3js-app
-	url = _gitea@git.uugrn.org:sdk/vue3js-app.git
+	url = _gitea@git.uugrn.org:flow/vue3js-app-proposal-for-sdk-claude.git
