@@ -24,3 +24,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Linked instrument modal with undo on discard — first edit to a linked instrument prompts embed-or-discard; discarding restores the original value
   - Any label click in CP or SubObjects panes switches the active tab to the FO pane
   - AM modulation parsed and exported symmetrically with FM modulation
+  - Voice motif definitions and offset stem notes fully parsed with clause/note/pause/stack bodies
+  - Static motifs (all absolute-pitched stem notes) navigable in Sub-objects pane; dynamic motifs shown inline in Voice FO summary
+  - Stem note FO pane with editable pitch, length, weight, adj_stress, and chain text fields
+  - Motif invocations (`line.motif`) at tick positions stored in `offset.motifs[]` and shown in Tick FO pane
+  - `stem_note.writeToName` captured for static motif storage name
+  - Parser updated for sompyler slot renames: `line.stem_note`, `seq.note/pause/stack`, `stem_note.chain` as real hierarchy node
