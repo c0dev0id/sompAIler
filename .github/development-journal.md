@@ -22,9 +22,6 @@ The AST log parser does a first pass to build a generic depth-stack tree, then a
 ### Worker scheduling in SQLite
 All worker assignment logic lives in SQL views and triggers (`neusician/schema.sql`). Python only calls `procman.get_status()` and reads results. Do not move scheduling logic to Python — the SQL approach handles concurrency correctly via SQLite's transaction semantics.
 
-### Fork workflow
-This repo is a fork of [upstream neusician](https://gitlab.com/flowdy/neusician) (remote: `upstream`). Development happens here; the upstream author cherry-picks commits back. Fetch `upstream` periodically and merge/rebase to stay in sync. `PLAN/` submodules are read-only references — never commit changes to them.
-
 ### Blueprint registration (server.py:66–72) — resolved
 Two bugs were fixed: `"score-editors"` → `"score_editors"` (hyphens not valid as Python identifiers in importable paths), and `.blueprint` moved outside `import_module(...)` so it is called on the module object, not the string. `SCORE_EDITOR_BLUEPRINT` config value must match `[A-Za-z]\w+`.
 
