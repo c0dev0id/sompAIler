@@ -37,6 +37,15 @@ AM and FM modulation share identical syntax per RFC §3.2.1.1.6-7. A single `ser
 ### Multi-pane Sub-objects driven by SLOT of SLOT.SUBTYPE
 The bottom handle bar is dynamic: fixed CP + FO handles, then one per kind of sub-object the focused node has. "Kind" is the SLOT part of the AST's SLOT.SUBTYPE namespace. Sub-objects sharing a SLOT (e.g. `line.stem_note` + `line.motif`, or `articles.defaults` + future `articles.<other>`) collapse into one pane; different SLOTs split. `subobject-kinds.js` produces the ordered group list per node type; `PaneSubObjects` is parameterized by `kind` and renders one group. This generalizes the previous single Sub-objects pane and naturally extends to any entity (variation gets LA + SV when it has both, voice gets MO + OF, etc.).
 
+### Articles keyed by label, scope per property
+An article is a (label, property-set) pair. Sompyler emits the same label twice when both `articles.defaults '<label>'` and (future) `articles.overwrites '<label>'` exist, with disjoint property sets. The parser merges these into one model entry keyed by label, with each property carrying its originating scope:
+
+```js
+{ name: 'f', properties: [{ name: 'add_stress', value: 3, scope: 'defaults' }, ...] }
+```
+
+The Article FO pane renders a `(O-) default` / `(-O) overwrite` toggle per property — the ASCII glyph mimics a physical toggle switch position so the active scope is visible at a glance. Click flips. Mutation marks the score dirty even though the YAML exporter doesn't roundtrip articles yet (v1 scope is instrument blocks only) — the model is correct for when exporter support lands.
+
 ### Preamble un-nesting in buildModel
 Sompyler's AST trace emits `articles.<subtype>`, `stage.cone`, and `stage.voice` at depth 01 via `with deeper_level("articles"):` / `deeper_level("stage"):` — implicit containers with no depth-00 header line. The generic depth-stack parser therefore nests them under the preceding `00 tuning`. `buildModel()` un-nests them by walking the `tuning` node's children and re-attributing any child whose `parentSlot ≠ 'tuning'` to the score-level top-level list. This is targeted (only tuning gets flattened) because other entities like `instrument` legitimately use implicit containers (`character`, `VOLUMES`, `TIMBRE`, `FM`, `AM`) for their real children.
 
