@@ -34,6 +34,12 @@ Mutations to shape coords happen in-place before `onChange` fires. To support di
 ### AM modulation reuses FM serializer
 AM and FM modulation share identical syntax per RFC §3.2.1.1.6-7. A single `serializeModulation()` function handles both. The parser captures both under `fmModulations` / `amModulations` arrays at both the instrument level and inside `basic_properties`.
 
+### Multi-pane Sub-objects driven by SLOT of SLOT.SUBTYPE
+The bottom handle bar is dynamic: fixed CP + FO handles, then one per kind of sub-object the focused node has. "Kind" is the SLOT part of the AST's SLOT.SUBTYPE namespace. Sub-objects sharing a SLOT (e.g. `line.stem_note` + `line.motif`, or `articles.defaults` + future `articles.<other>`) collapse into one pane; different SLOTs split. `subobject-kinds.js` produces the ordered group list per node type; `PaneSubObjects` is parameterized by `kind` and renders one group. This generalizes the previous single Sub-objects pane and naturally extends to any entity (variation gets LA + SV when it has both, voice gets MO + OF, etc.).
+
+### Preamble un-nesting in buildModel
+Sompyler's AST trace emits `articles.<subtype>`, `stage.cone`, and `stage.voice` at depth 01 via `with deeper_level("articles"):` / `deeper_level("stage"):` — implicit containers with no depth-00 header line. The generic depth-stack parser therefore nests them under the preceding `00 tuning`. `buildModel()` un-nests them by walking the `tuning` node's children and re-attributing any child whose `parentSlot ≠ 'tuning'` to the score-level top-level list. This is targeted (only tuning gets flattened) because other entities like `instrument` legitimately use implicit containers (`character`, `VOLUMES`, `TIMBRE`, `FM`, `AM`) for their real children.
+
 ## Core Features
 
 - HTTP Basic Auth with self-registration (password prefix = `NEUSICIAN_NEW_USER_REG_PREFIX`)

@@ -30,3 +30,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Motif invocations (`line.motif`) at tick positions stored in `offset.motifs[]` and shown in Tick FO pane
   - `stem_note.writeToName` captured for static motif storage name
   - Parser updated for sompyler slot renames: `line.stem_note`, `seq.note/pause/stack`, `stem_note.chain` as real hierarchy node
+  - Multi-pane Sub-objects: handle bar now lists one pane per kind of sub-object the focused node has (e.g. score node shows TU, ST, IN, AR, BA — tuning, stage, instruments, articles, bars). Handles are 2-letter labels, intended as alt-text for icons in a later release.
+  - Parser support for sompyler 10cad1f preamble: `stage.cone` and `stage.voice` (replacing `stage_voice`), `articles.<subtype>` (replacing `article`; first subtype is `defaults`), `tuning.frequency_factors` slot with `label` (e.g. `just5lim`)
