@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Never** check in any CLAUDE file (.claude/, CLAUDE.md, CHANGELOG.md, .github/development-journal.md) to submodule repositories. They can be checked in to the root repository.
 - **Always** perform fixture tests to find errors after in the implementation.
 - **Always** verify that changes don't break RFC conformance
+- **Never** add backward compatibility when changing code A to B. Code A must be removed; code B must be added. No dual support, no fallbacks, no OR conditions across old and new.
 
 ## General
 
