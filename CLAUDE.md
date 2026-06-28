@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Always** perform fixture tests (see *Testing* below) after any implementation change.
 - **Always** verify that changes don't break RFC conformance.
 - **Never** add backward compatibility when changing code A to B. Code A must be removed; code B must be added. No dual support, no fallbacks, no OR conditions across old and new.
+- **Never** act on user self-criticism. When the user owns a past mistake ("it's my fault", "I should have…"), treat it as a closing-the-loop signal — wait for a clear command. Do not preemptively fix, revert, or push an unnegotiated backward-compat shim, especially to `origin/master`.
 - **Always** pull the latest commits from the main repository and all submodules before starting work on any user prompt or plan.
 - When questions arise during development, you **must** stop and ask the user how to proceed. **Override global rule**: the rule to minimize interruptions and proceed automatically does **not** apply in this project.
 
