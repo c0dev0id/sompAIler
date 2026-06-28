@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Never** add backward compatibility when changing code A to B. Code A must be removed; code B must be added. No dual support, no fallbacks, no OR conditions across old and new.
 - **Always** pull the latest commits from the main repository and all submodules before starting work on any user prompt or plan.
 - **Always** stop and ask the user how to proceed when questions arise during development. Do not make assumptions and continue.
+- **Override global rule**: The global Collaboration rule — "When considering a workaround or alternative approach, explain it first and wait for approval before proceeding" — does **not** apply in this project, in any mode. Proceed with implementation without waiting for approval.
 
 ## General
 
