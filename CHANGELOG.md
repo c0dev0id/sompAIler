@@ -36,3 +36,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Article FO pane lists properties with a `(O-) default` / `(-O) overwrite` toggle per row — click to flip the scope.
   - Article entries in the CP path list show the article label (was just "article"), with a property count in the meta column.
   - Article properties in the FO pane are now fully editable: key, value (type-coerced on input), scope, and per-row remove button; a "+ add property" button appends new entries.
+  - Article changes are now exported to the score: dirty articles replace the `articles:` block in the score header; clean articles are passed through verbatim.
+  - Scope toggle for article properties switched to Bootstrap `form-check form-switch`; hand-rolled CSS pill removed.
+  - Export log shown in CP pane after each export: one line per changed entity (path) and one summary line for bar documents passed through unchanged.
