@@ -46,6 +46,15 @@ An article is a (label, property-set) pair. Sompyler emits the same label twice 
 
 The Article FO pane renders a `(O-) default` / `(-O) overwrite` toggle per property — the ASCII glyph mimics a physical toggle switch position so the active scope is visible at a glance. Click flips. Mutation marks the score dirty even though the YAML exporter doesn't roundtrip articles yet (v1 scope is instrument blocks only) — the model is correct for when exporter support lands.
 
+### Delete and add for sub-object entities
+Instruments, articles, variations, label specs, and bars are all deletable from the Sub-objects pane. Deletions are tracked differently per entity type:
+- Instruments: spliced from `scoreModel.instruments`; export skips the matching block in `patchInstrumentHeader`.
+- Articles: spliced from `scoreModel.articles`; `model.articlesModified = true` flags the exporter to re-serialize the articles block even if no remaining article is dirty (passed via `flags` 6th arg to `patchScore`).
+- Bars: `bar.deleted = true`; export filters out matching YAML documents.
+- Variations / label specs: spliced from parent arrays; parent instrument marked `isDirty`.
+
+New bars are created with `{ type: 'bar', isNew: true, isDirty: true, ... }` and appended to `model.bars`. Their ID is preset by incrementing the trailing digit run of the last bar in the group or globally. The ID field is editable in the FO pane when `bar.isNew`. On export they are appended as new YAML documents after all existing bar documents.
+
 ### Bar ID grouping heuristic in BA pane
 Bar IDs are opaque. For display purposes only, the BA sub-objects pane groups bars by stripping the final maximal run of same-class characters (all-digits or all-non-digits) from the ID tail — the remainder is the group key. This is a pure string operation with no knowledge of P/L/M structure. If IDs share a common prefix up to that final run, they appear on the same row as inline chips; otherwise each bar is its own singleton row. Do not add structural pattern matching here; bar IDs remain opaque for all purposes.
 
