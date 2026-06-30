@@ -39,3 +39,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Article changes are now exported to the score: dirty articles replace the `articles:` block in the score header; clean articles are passed through verbatim.
   - Scope toggle for article properties switched to Bootstrap `form-check form-switch`; hand-rolled CSS pill removed.
   - Export log shown in CP pane after each export: one line per changed entity (path) and one summary line for bar documents passed through unchanged.
+  - BA (bar) sub-objects pane now groups bars by the `P?L?` section key extracted from their IDs, displaying each group as a row of compact inline-block chips; groups are separated by a line break. Clicking a chip focuses the bar as before.
+  - Custom auth dialog removed; credentials are now handled entirely by the browser's native Basic Auth prompt on 401 responses. The `→ Import` button triggers a direct fetch; `?import=1` auto-imports on page load.

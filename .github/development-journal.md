@@ -46,6 +46,9 @@ An article is a (label, property-set) pair. Sompyler emits the same label twice 
 
 The Article FO pane renders a `(O-) default` / `(-O) overwrite` toggle per property — the ASCII glyph mimics a physical toggle switch position so the active scope is visible at a glance. Click flips. Mutation marks the score dirty even though the YAML exporter doesn't roundtrip articles yet (v1 scope is instrument blocks only) — the model is correct for when exporter support lands.
 
+### Bar ID grouping heuristic in BA pane
+Bar IDs are opaque. For display purposes only, the BA sub-objects pane groups bars by extracting the `P\d+L\d+` fragment (e.g. `P1L1`, `P2L3`) from the ID as a visual group key. Observed IDs follow the pattern `[prefix]P\d+L\d+M\d+` where the prefix is a per-bar sequential counter that differs even between bars in the same section — so stripping only trailing digits gives singleton groups. The two-step approach (match `P\d+L\d+`) gives one row per section. If the ID format changes and the pattern is absent, `barGroupKey()` falls back to stripping trailing digits, yielding singletons — no crash, just no grouping. Do not promote this into semantic parsing; bar IDs remain opaque for all other purposes.
+
 ### Preamble un-nesting in buildModel
 Sompyler's AST trace emits `articles.<subtype>`, `stage.cone`, and `stage.voice` at depth 01 via `with deeper_level("articles"):` / `deeper_level("stage"):` — implicit containers with no depth-00 header line. The generic depth-stack parser therefore nests them under the preceding `00 tuning`. `buildModel()` un-nests them by walking the `tuning` node's children and re-attributing any child whose `parentSlot ≠ 'tuning'` to the score-level top-level list. This is targeted (only tuning gets flattened) because other entities like `instrument` legitimately use implicit containers (`character`, `VOLUMES`, `TIMBRE`, `FM`, `AM`) for their real children.
 
