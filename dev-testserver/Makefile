@@ -14,14 +14,14 @@ WORKER_DIRS    := $(addprefix $(TMPDIR_PATH)/,$(WORKER_IDS)) $(TMPDIR_PATH)/OUT
 NEUSICIAN_INST := $(CURDIR)/instance
 DB             := $(NEUSICIAN_INST)/neusician.db
 
-BASE_TMPL      := $(CURDIR)/templates/base.tmpl
-BASE_TMPL_STUB := $(NEUSICIAN_DIR)/neusician/templates/base.tmpl.stub
+BASE_TMPL        := $(CURDIR)/templates/base.tmpl
+BASE_TMPL_STUB   := $(NEUSICIAN_DIR)/neusician/templates/base.tmpl.stub
 AUDIOWIDGET      := $(CURDIR)/templates/vue3_neusik/audiowidget.tmpl
 AUDIOWIDGET_STUB := $(VUE_APP_DIR)/templates/vue3_neusik/audiowidget.tmpl.stub
 
 .PHONY: build serve clean
 
-build: venv/.installed score_editors/vue3_neusik sompyler-run/scripts \
+build: venv/.installed neusician score_editors/vue3_neusik sompyler-run/scripts \
        $(WORKER_DIRS) $(NEUSICIAN_INST)/config.py $(BASE_TMPL) $(AUDIOWIDGET)
 
 # ── python venv ───────────────────────────────────────────────────────────────
@@ -34,8 +34,13 @@ venv/.installed:
 	$(PYTHON) -c "\
 import sysconfig, pathlib; \
 p = pathlib.Path(sysconfig.get_path('purelib')); \
-(p / 'sompAIler.pth').write_text('$(NEUSICIAN_DIR)\n$(SOMPYLER_DIR)\n$(CURDIR)\n')"
+(p / 'sompAIler.pth').write_text('$(SOMPYLER_DIR)\n$(CURDIR)\n')"
 	@touch $@
+
+# ── neusician package symlink ─────────────────────────────────────────────────
+
+neusician:
+	ln -sf $(NEUSICIAN_DIR)/neusician $@
 
 # ── score_editors package ─────────────────────────────────────────────────────
 
@@ -95,4 +100,4 @@ serve:
 # ── clean ─────────────────────────────────────────────────────────────────────
 
 clean:
-	rm -rf venv score_editors sompyler-run tmp instance templates
+	rm -rf venv neusician score_editors sompyler-run tmp instance templates
