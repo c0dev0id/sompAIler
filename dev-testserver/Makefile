@@ -11,11 +11,13 @@ FLASK  := $(VENV)/bin/flask
 TMPDIR_PATH    := $(CURDIR)/tmp
 WORKER_IDS     := 00 01 02
 WORKER_DIRS    := $(addprefix $(TMPDIR_PATH)/,$(WORKER_IDS)) $(TMPDIR_PATH)/OUT
-NEUSICIAN_INST := $(REPO_ROOT)/instance
+NEUSICIAN_INST := $(CURDIR)/instance
 DB             := $(NEUSICIAN_INST)/neusician.db
 
-BASE_TMPL      := $(NEUSICIAN_DIR)/neusician/templates/base.tmpl
-AUDIOWIDGET    := $(VUE_APP_DIR)/templates/vue3_neusik/audiowidget.tmpl
+BASE_TMPL      := $(CURDIR)/templates/base.tmpl
+BASE_TMPL_STUB := $(NEUSICIAN_DIR)/neusician/templates/base.tmpl.stub
+AUDIOWIDGET      := $(CURDIR)/templates/vue3_neusik/audiowidget.tmpl
+AUDIOWIDGET_STUB := $(VUE_APP_DIR)/templates/vue3_neusik/audiowidget.tmpl.stub
 
 .PHONY: build serve clean
 
@@ -78,18 +80,19 @@ $(NEUSICIAN_INST)/config.py: $(DB)
 # ── template stubs ────────────────────────────────────────────────────────────
 
 $(BASE_TMPL):
-	cp $(BASE_TMPL).stub $@
+	mkdir -p $(CURDIR)/templates
+	cp $(BASE_TMPL_STUB) $@
 
 $(AUDIOWIDGET):
-	cp $(AUDIOWIDGET).stub $@
+	mkdir -p $(CURDIR)/templates/vue3_neusik
+	cp $(AUDIOWIDGET_STUB) $@
 
 # ── serve ─────────────────────────────────────────────────────────────────────
 
 serve:
-	$(FLASK) --app $(REPO_ROOT)/wsgi.py run --port 5005
+	$(FLASK) --app $(CURDIR)/wsgi.py run --port 5005
 
 # ── clean ─────────────────────────────────────────────────────────────────────
 
 clean:
-	rm -rf venv score_editors sompyler-run tmp $(NEUSICIAN_INST)
-	rm -f $(BASE_TMPL) $(AUDIOWIDGET)
+	rm -rf venv score_editors sompyler-run tmp instance templates
