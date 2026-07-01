@@ -148,7 +148,7 @@ $(JQUERYUI_DIR)/jquery-ui.min.css: src/neusician/.stamp
 # ── serve ─────────────────────────────────────────────────────────────────────
 
 serve:
-	$(FLASK) --app $(NEUSICIAN_SRC)/wsgi.py run --port 5005
+	$(FLASK) --app $(NEUSICIAN_SRC)/wsgi.py run --port 5005 --no-threaded
 
 # ── clean ─────────────────────────────────────────────────────────────────────
 
