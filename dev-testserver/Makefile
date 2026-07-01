@@ -30,18 +30,27 @@ build: venv/.installed neusician score_editors/vue3_neusik sompyler-run/scripts 
 # ── download sources ──────────────────────────────────────────────────────────
 
 src/neusician/.stamp:
-	mkdir -p src/neusician
-	ftp -o - "$(NEUSICIAN_URL)" | tar -C src/neusician --strip-components=1 -xzf -
+	mkdir -p src
+	ftp -o src/_dl.tgz "$(NEUSICIAN_URL)"
+	tar -C src -xzf src/_dl.tgz
+	mv src/neusician-master src/neusician
+	rm src/_dl.tgz
 	@touch $@
 
 src/sompyler/.stamp:
-	mkdir -p src/sompyler
-	ftp -o - "$(SOMPYLER_URL)" | tar -C src/sompyler --strip-components=1 -xzf -
+	mkdir -p src
+	ftp -o src/_dl.tgz "$(SOMPYLER_URL)"
+	tar -C src -xzf src/_dl.tgz
+	mv src/sompyler-master src/sompyler
+	rm src/_dl.tgz
 	@touch $@
 
 src/vue3js-app/.stamp:
-	mkdir -p src/vue3js-app
-	ftp -o - "$(VUE_APP_URL)" | tar -C src/vue3js-app --strip-components=1 -xzf -
+	mkdir -p src
+	ftp -o src/_dl.tgz "$(VUE_APP_URL)"
+	tar -C src -xzf src/_dl.tgz
+	mv src/vue3js-app-proposal-for-sdk-claude-master src/vue3js-app
+	rm src/_dl.tgz
 	@touch $@
 
 # ── python venv ───────────────────────────────────────────────────────────────
