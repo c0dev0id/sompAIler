@@ -49,8 +49,8 @@ src/vue3js-app/.stamp:
 	mkdir -p src
 	ftp -o src/_dl.tgz "$(VUE_APP_URL)"
 	tar -C src -xzf src/_dl.tgz
-	mv src/vue3js-app-proposal-for-sdk-claude-master src/vue3js-app
 	rm src/_dl.tgz
+	cd src && for d in vue3js-app-*/; do mv "$$d" vue3js-app; break; done
 	@touch $@
 
 # ── python venv ───────────────────────────────────────────────────────────────
