@@ -11,13 +11,13 @@ FLASK  := $(VENV)/bin/flask
 TMPDIR_PATH    := $(CURDIR)/tmp
 WORKER_IDS     := 00 01 02
 WORKER_DIRS    := $(addprefix $(TMPDIR_PATH)/,$(WORKER_IDS)) $(TMPDIR_PATH)/OUT
-NEUSICIAN_INST := $(NEUSICIAN_DIR)/instance
+NEUSICIAN_INST := $(REPO_ROOT)/instance
 DB             := $(NEUSICIAN_INST)/neusician.db
 
 BASE_TMPL      := $(NEUSICIAN_DIR)/neusician/templates/base.tmpl
 AUDIOWIDGET    := $(VUE_APP_DIR)/templates/vue3_neusik/audiowidget.tmpl
 
-.PHONY: build serve
+.PHONY: build serve clean
 
 build: venv/.installed score_editors/vue3_neusik sompyler-run/scripts \
        $(WORKER_DIRS) $(NEUSICIAN_INST)/config.py $(BASE_TMPL) $(AUDIOWIDGET)
@@ -25,7 +25,7 @@ build: venv/.installed score_editors/vue3_neusik sompyler-run/scripts \
 # ── python venv ───────────────────────────────────────────────────────────────
 
 venv/.installed:
-	python3 -m venv $(VENV)
+	python3 -m venv --system-site-packages $(VENV)
 	$(PIP) install --upgrade pip
 	$(PIP) install -r $(SOMPYLER_DIR)/requirements.txt
 	$(PIP) install flask flask-httpauth
@@ -87,3 +87,9 @@ $(AUDIOWIDGET):
 
 serve:
 	$(FLASK) --app $(REPO_ROOT)/wsgi.py run --port 5005
+
+# ── clean ─────────────────────────────────────────────────────────────────────
+
+clean:
+	rm -rf venv score_editors sompyler-run tmp $(NEUSICIAN_INST)
+	rm -f $(BASE_TMPL) $(AUDIOWIDGET)
