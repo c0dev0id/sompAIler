@@ -33,6 +33,7 @@ src/neusician/.stamp:
 	mkdir -p src
 	ftp -o src/_dl.tgz "$(NEUSICIAN_URL)"
 	tar -C src -xzf src/_dl.tgz
+	rm -rf src/neusician
 	mv src/neusician-master src/neusician
 	rm src/_dl.tgz
 	@touch $@
@@ -41,6 +42,7 @@ src/sompyler/.stamp:
 	mkdir -p src
 	ftp -o src/_dl.tgz "$(SOMPYLER_URL)"
 	tar -C src -xzf src/_dl.tgz
+	rm -rf src/sompyler
 	mv src/sompyler-master src/sompyler
 	rm src/_dl.tgz
 	@touch $@
@@ -50,6 +52,7 @@ src/vue3js-app/.stamp:
 	ftp -o src/_dl.tgz "$(VUE_APP_URL)"
 	tar -C src -xzf src/_dl.tgz
 	rm src/_dl.tgz
+	rm -rf src/vue3js-app
 	cd src && for d in vue3js-app-*/; do mv "$$d" vue3js-app; break; done
 	@touch $@
 
