@@ -22,10 +22,17 @@ BASE_TMPL_STUB   := $(NEUSICIAN_SRC)/neusician/templates/base.tmpl.stub
 AUDIOWIDGET      := $(VUE_APP_SRC)/templates/vue3_neusik/audiowidget.tmpl
 AUDIOWIDGET_STUB := $(VUE_APP_SRC)/templates/vue3_neusik/audiowidget.tmpl.stub
 
+STATIC        := $(NEUSICIAN_SRC)/neusician/static
+JQUERYUI_DIR  := $(STATIC)/jquery-ui-1.12.1.custom
+JQUERY_URL    := https://code.jquery.com/jquery-3.5.1.min.js
+JQUERYUI_JS   := https://code.jquery.com/ui/1.12.1/jquery-ui.js
+JQUERYUI_CSS  := https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css
+
 .PHONY: build serve clean
 
 build: venv/.installed neusician score_editors/vue3_neusik sompyler-run/scripts \
-       $(WORKER_DIRS) $(NEUSICIAN_INST)/config.py $(BASE_TMPL) $(AUDIOWIDGET)
+       $(WORKER_DIRS) $(NEUSICIAN_INST)/config.py $(BASE_TMPL) $(AUDIOWIDGET) \
+       $(STATIC)/jquery-3.5.1.min.js $(JQUERYUI_DIR)/jquery-ui.js $(JQUERYUI_DIR)/jquery-ui.min.css
 
 # ── download sources ──────────────────────────────────────────────────────────
 
@@ -94,6 +101,7 @@ sompyler-run/scripts: venv/.installed src/sompyler/.stamp
 	mkdir -p sompyler-run
 	ln -sf $(SOMPYLER_SRC)/scripts sompyler-run/scripts
 	ln -sf $(VENV) sompyler-run/venv
+	touch sompyler-run/introspectables.txt
 
 # ── worker + output directories ───────────────────────────────────────────────
 
@@ -123,6 +131,19 @@ $(BASE_TMPL): src/neusician/.stamp
 
 $(AUDIOWIDGET): src/vue3js-app/.stamp
 	cp $(AUDIOWIDGET_STUB) $@
+
+# ── static assets (not shipped with neusician) ────────────────────────────────
+
+$(STATIC)/jquery-3.5.1.min.js: src/neusician/.stamp
+	ftp -o $@ "$(JQUERY_URL)"
+
+$(JQUERYUI_DIR)/jquery-ui.js: src/neusician/.stamp
+	mkdir -p $(JQUERYUI_DIR)
+	ftp -o $@ "$(JQUERYUI_JS)"
+
+$(JQUERYUI_DIR)/jquery-ui.min.css: src/neusician/.stamp
+	mkdir -p $(JQUERYUI_DIR)
+	ftp -o $@ "$(JQUERYUI_CSS)"
 
 # ── serve ─────────────────────────────────────────────────────────────────────
 
