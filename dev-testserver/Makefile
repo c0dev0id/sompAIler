@@ -15,11 +15,11 @@ TMPDIR_PATH := $(CURDIR)/tmp
 WORKER_IDS  := 00 01 02
 WORKER_DIRS := $(addprefix $(TMPDIR_PATH)/,$(WORKER_IDS)) $(TMPDIR_PATH)/OUT
 
-NEUSICIAN_INST   := $(CURDIR)/instance
+NEUSICIAN_INST   := $(NEUSICIAN_SRC)/instance
 DB               := $(NEUSICIAN_INST)/neusician.db
-BASE_TMPL        := $(CURDIR)/templates/base.tmpl
+BASE_TMPL        := $(NEUSICIAN_SRC)/neusician/templates/base.tmpl
 BASE_TMPL_STUB   := $(NEUSICIAN_SRC)/neusician/templates/base.tmpl.stub
-AUDIOWIDGET      := $(CURDIR)/templates/vue3_neusik/audiowidget.tmpl
+AUDIOWIDGET      := $(VUE_APP_SRC)/templates/vue3_neusik/audiowidget.tmpl
 AUDIOWIDGET_STUB := $(VUE_APP_SRC)/templates/vue3_neusik/audiowidget.tmpl.stub
 
 .PHONY: build serve clean
@@ -59,7 +59,9 @@ p = pathlib.Path(sysconfig.get_path('purelib')); \
 
 # ── neusician package symlink ─────────────────────────────────────────────────
 # procman uses SUBDIR="neusician" to locate schema.sql relative to CWD.
-# Symlinking the inner package dir here makes that resolve correctly.
+# Flask is invoked with --app src/neusician/wsgi.py, making src/neusician/ the
+# CWD, so neusician/schema.sql resolves to src/neusician/neusician/schema.sql.
+# The symlink here makes "import neusician" work with dev-testserver/ on sys.path.
 
 neusician: src/neusician/.stamp
 	ln -sf $(NEUSICIAN_SRC)/neusician $@
@@ -75,8 +77,6 @@ score_editors/vue3_neusik: score_editors/__init__.py src/vue3js-app/.stamp
 
 # ── sompyler synthesis wrapper ────────────────────────────────────────────────
 # single-sompyler-procman.sh does: cd $SOMPYLER; . venv/bin/activate; ./scripts/sompyle
-# We can't create venv/ inside the downloaded sompyler source, so point
-# SOMPYLER at this wrapper directory which symlinks both into place.
 
 sompyler-run/scripts: venv/.installed src/sompyler/.stamp
 	mkdir -p sompyler-run
@@ -90,7 +90,7 @@ $(WORKER_DIRS):
 
 # ── database ──────────────────────────────────────────────────────────────────
 
-$(DB): $(WORKER_DIRS)
+$(DB): $(WORKER_DIRS) src/neusician/.stamp
 	mkdir -p $(NEUSICIAN_INST)
 	touch $(DB)
 
@@ -107,19 +107,17 @@ $(NEUSICIAN_INST)/config.py: $(DB)
 # ── template stubs ────────────────────────────────────────────────────────────
 
 $(BASE_TMPL): src/neusician/.stamp
-	mkdir -p $(CURDIR)/templates
 	cp $(BASE_TMPL_STUB) $@
 
 $(AUDIOWIDGET): src/vue3js-app/.stamp
-	mkdir -p $(CURDIR)/templates/vue3_neusik
 	cp $(AUDIOWIDGET_STUB) $@
 
 # ── serve ─────────────────────────────────────────────────────────────────────
 
 serve:
-	$(FLASK) --app $(CURDIR)/wsgi.py run --port 5005
+	$(FLASK) --app $(NEUSICIAN_SRC)/wsgi.py run --port 5005
 
 # ── clean ─────────────────────────────────────────────────────────────────────
 
 clean:
-	rm -rf venv src neusician score_editors sompyler-run tmp instance templates
+	rm -rf venv src neusician score_editors sompyler-run tmp
