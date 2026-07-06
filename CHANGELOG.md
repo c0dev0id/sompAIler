@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- vue3js-app: extracted shared utilities `coerce` and `stressorToString` into `static/util.js`; extracted breadcrumb projection `shortView` into `static/node-views.js`
+- vue3js-app: renamed `rawChildren` → `unknownSlots` on all model objects; renamed `Offset.motifs` → `Offset.motifRefs` to distinguish invocation references from full Motif objects
+- vue3js-app: underscore-prefixed all non-exported functions across `ast-parser.js`, `exporter.js`, and component helpers
+- vue3js-app: removed WHAT-comments throughout; kept RFC section references and non-obvious WHY constraints
+- vue3js-app: converted imperative loops in `exporter.js` and `subobject-kinds.js` to `.map()`, `.flatMap()`, `.filter()`, `.forEach()`; deduplicated `newBars` filter in `patchScore`
+
 ### Added
 
 - `score_editors/vue3_neusik/` — Vue3 SPA score editor deployed as a Flask Blueprint
