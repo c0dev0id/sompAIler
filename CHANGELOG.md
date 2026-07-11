@@ -52,3 +52,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Delete buttons (red ×) on all logically removable entities: instruments, articles, variations, label specs (via Sub-objects pane ObjectShort rows); bars (via chip × button). Article deletion sets `articlesModified` so the articles block is re-serialized even when no remaining article is dirty. Instrument deletion skips the block in export. Bar deletion filters the YAML document. Variation/label-spec deletion splices from the parent and marks the instrument dirty.
   - Bar add buttons: each group in the BA pane has a "+ add" button that presets the new bar ID by incrementing the trailing digit run of the last bar in that group; a global "+ add bar" at the end uses the last bar overall. New bar ID is editable in the FO pane. New bars are appended as YAML documents on export.
   - `patchScore` accepts a `flags` object (6th argument) with `articlesModified: true` to force article block re-serialization independent of per-article dirty state.
+
+### Changed (architecture cleanup — phases 4–6)
+
+- vue3js-app: article model reworked for sompyler's new two-level structure: `stage.article 'label'` and `voice.article 'label'` with `article.defaults`, `article.overwrites`, and `article.definite` children; `voice.article` now stores full article objects instead of label strings
+- vue3js-app: article exporter emits `-important:` YAML list for overwrite-scope properties; articles block always re-serialized on export (no per-article dirty tracking)
+- vue3js-app: `stem_note` model gains `weight` and `articulatory` fields; `article.definite` properties from child slots are flattened directly onto the stem note as siblings of `pitch` and `chain`
+- vue3js-app: edit-state flags (`isDirty`, `deleted`, `isNew`) removed from all domain model objects; exporter now traverses the current object tree on demand — absent nodes are naturally skipped; `_modified` (linked instruments) and `_isNew` (new bars) replace the removed flags with minimal, targeted lifecycle markers
+- vue3js-app: `_spliceNode` helper extracted from 5× duplicated indexOf+splice+markDirty pattern in PaneSubObjects; bar and article deletion now splice from the array immediately rather than setting flags
+- vue3js-app: `store.resetEditState()` added; used on import to reset dirty flag, focus path, and export log in one call; `patchScore` `flags` argument dropped
