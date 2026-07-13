@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- vue3js-app: `NOT_CHANGED_SINCE` now correctly written on every export — float epoch converted to ISO date for unmodified linked instruments, current timestamp for re-serialized instruments
+- vue3js-app: synthesis errors from `status.json` now displayed in the CP pane after the synthesis run completes
+- vue3js-app: deleting an instrument now also removes its corresponding `stage:` voice entry from the exported score
+
 ### Changed
 
 - vue3js-app: extracted shared utilities `coerce` and `stressorToString` into `static/util.js`; extracted breadcrumb projection `shortView` into `static/node-views.js`
