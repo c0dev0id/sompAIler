@@ -46,14 +46,30 @@ An article is a (label, property-set) pair. Sompyler emits the same label twice 
 
 The Article FO pane renders a `(O-) default` / `(-O) overwrite` toggle per property — the ASCII glyph mimics a physical toggle switch position so the active scope is visible at a glance. Click flips. Mutation marks the score dirty even though the YAML exporter doesn't roundtrip articles yet (v1 scope is instrument blocks only) — the model is correct for when exporter support lands.
 
-### Delete and add for sub-object entities
-Instruments, articles, variations, label specs, and bars are all deletable from the Sub-objects pane. Deletions are tracked differently per entity type:
-- Instruments: spliced from `scoreModel.instruments`; export skips the matching block in `patchInstrumentHeader`.
-- Articles: spliced from `scoreModel.articles`; `model.articlesModified = true` flags the exporter to re-serialize the articles block even if no remaining article is dirty (passed via `flags` 6th arg to `patchScore`).
-- Bars: `bar.deleted = true`; export filters out matching YAML documents.
-- Variations / label specs: spliced from parent arrays; parent instrument marked `isDirty`.
+### Edit-state outside domain objects (Phase 4 refactor)
+Domain objects (instruments, bars, stem notes) carry no lifecycle flags. The exporter traverses the current object tree on demand — absent nodes are naturally skipped.
 
-New bars are created with `{ type: 'bar', isNew: true, isDirty: true, ... }` and appended to `model.bars`. Their ID is preset by incrementing the trailing digit run of the last bar in the group or globally. The ID field is editable in the FO pane when `bar.isNew`. On export they are appended as new YAML documents after all existing bar documents.
+Two targeted lifecycle markers remain, prefixed with `_` to signal non-domain state:
+- `instr._modified = true` — set on a linked instrument when first edited; tells the exporter to re-serialize rather than pass through.
+- `bar._isNew = true` — set on a bar object at creation; tells the exporter to append it as a new YAML document.
+
+Deletions splice the node from its parent array immediately (`_spliceNode` helper in PaneSubObjects). The exporter sees only surviving nodes. No `deleted` flag, no Set tracking.
+
+`store.isDirty` (boolean) is the only edit-state signal. `store.markDirty()` sets it. `store.resetEditState()` resets `isDirty`, `focusPath`, and `exportLog` on import. Articles are re-serialized unconditionally on every export — no `articlesModified` flag.
+
+### Delete and add for sub-object entities
+Instruments, articles, variations, label specs, and bars are all deletable from the Sub-objects pane. All deletions call `_spliceNode(arr, node, store)` which splices from the parent array and calls `store.markDirty()`.
+
+New bars are created with `{ ..., _isNew: true }` and appended to `model.bars`. Their ID is preset by incrementing the trailing digit run of the last bar in the group or globally. The ID field is editable in the FO pane when `bar._isNew`. On export they are appended as new YAML documents after all existing bar documents.
+
+### Stage voice cleanup reads raw score text
+The AST log `stage.voice` slot carries only `direction` and `distance` — no instrument reference. `_patchStageSection` in the exporter therefore reads the raw score header text to determine which instrument each voice references: explicit `instrument:` key in mapping form, or voice name as the implicit instrument name in string form (`voicename: LEFT|RIGHT DIST [instrument]` — instrument is the optional third token). Voices whose resolved instrument name is absent from the current model are removed from the exported stage block. `_space:` (orchestra cone) is always kept.
+
+### NOT_CHANGED_SINCE always written on export
+Sompyler's AST log emits this field as a float Unix epoch; the score YAML requires `YYYY-MM-DD HH:MM:SS`. On every export: unmodified linked instruments (`isLinked && !_modified`) get the stored epoch converted to ISO via `_epochToISO`; all re-serialized instruments get the current timestamp via `_nowISO()`. Never omitted.
+
+### Synthesis errors displayed in PaneCP
+`StatusPoller` is unmounted when `synthesisStatus.frozen = true`, so errors from `status.json` never reached the poller path after synthesis completed. PaneCP now reads `store.synthesisStatus.errors` directly when frozen and renders them alongside import/export errors.
 
 ### Bar ID grouping heuristic in BA pane
 Bar IDs are opaque. For display purposes only, the BA sub-objects pane groups bars by stripping the final maximal run of same-class characters (all-digits or all-non-digits) from the ID tail — the remainder is the group key. This is a pure string operation with no knowledge of P/L/M structure. If IDs share a common prefix up to that final run, they appear on the same row as inline chips; otherwise each bar is its own singleton row. Do not add structural pattern matching here; bar IDs remain opaque for all purposes.
